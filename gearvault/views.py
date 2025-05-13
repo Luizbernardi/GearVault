@@ -21,3 +21,8 @@ from django.contrib.auth.decorators import login_required
 def home(request):
     produtos = Produto.objects.all()
     return render(request, 'pages/home.html', {'produtos': produtos})
+
+
+def produtos(request):
+    produtos = Produto.objects.all()
+    return render(request, 'pages/produtos.html', {'produtos': produtos})
