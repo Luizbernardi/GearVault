@@ -1,0 +1,36 @@
+
+{% extends 'base.html' %}
+{% block title %}
+Login
+{% endblock %}
+{% block content %}
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 90vh;">
+    <div class="card shadow-lg border-0" style="width: 100%; max-width: 400px; background: linear-gradient(135deg, #f8f9fa, #e9ecef);">
+        <div class="text-center py-3 bg-info" style=" border-top-left-radius: .25rem; border-top-right-radius: .25rem;">
+            <h4 class=" text-dark m-0">Login</h4>
+        </div>
+        <div class="card-body p-4">
+            <form method="POST">  
+                {% csrf_token %}
+                <div class="mb-4">
+                    <label for="usuario" class="form-label fw-bold">Usuário</label>
+                    <input type="text" class="form-control rounded-pill" id="usuario" name="usuario" placeholder="Digite seu usuário" required>
+                </div>
+                <div class="mb-4">
+                    <label for="senha" class="form-label fw-bold">Senha</label>
+                    <input type="password" class="form-control rounded-pill" id="senha" name="senha" placeholder="Digite sua senha" required>
+                </div>
+                {% if error_message %}
+                <div class="alert alert-danger text-center" role="alert">
+                    {{ error_message }}
+                </div>
+                {% endif %}
+                <button type="submit" class="btn text-dark bg-info w-100 rounded-pill">Entrar</button>
+            </form>
+        </div>
+        <div class="card-footer text-center py-3" style="background-color: #f8f9fa;">
+            <small class="text-muted">Não tem uma conta? <a href="{% url 'register' %}" class="text-decoration-none fw-bold">Registre-se</a></small>
+        </div>
+    </div>
+</div>
+{% endblock %}
