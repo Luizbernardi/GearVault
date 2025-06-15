@@ -4,3 +4,6 @@ from django.apps import AppConfig
 class GearvaultConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'gearvault'
+
+    def ready(self):
+        import gearvault.signals

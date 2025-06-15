@@ -1,15 +1,36 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.validators import MinLengthValidator, MaxLengthValidator
+
+# Endereço (padrão Brasil)
+
+
+class Endereco(models.Model):
+    logradouro = models.CharField(max_length=255)
+    numero = models.CharField(max_length=20)
+    complemento = models.CharField(max_length=100, blank=True, null=True)
+    bairro = models.CharField(max_length=100)
+    cidade = models.CharField(max_length=100)
+    estado = models.CharField(max_length=2)
+    cep = models.CharField(max_length=8)
+
+    def __str__(self):
+        return f"{self.logradouro}, {self.numero} - {self.bairro}, {self.cidade} - {self.estado}, {self.cep}"
 
 # Fornecedor
 
-
 class Fornecedor(models.Model):
     nome = models.CharField(max_length=255)
-    cnpj = models.CharField(max_length=20, blank=True, null=True)
-    email = models.EmailField(blank=True, null=True)
-    telefone = models.CharField(max_length=20, blank=True, null=True)
-    endereco = models.CharField(max_length=255, blank=True, null=True)
+    cnpj = models.CharField(  max_length=14, validators=[
+        MinLengthValidator(14),
+            MaxLengthValidator(14)
+        ], blank=False, null=False)
+    email = models.EmailField(blank=False, null=False)
+    telefone = models.CharField(max_length=11,  validators=[
+            MinLengthValidator(11), 
+            MaxLengthValidator(11)
+        ], blank=False, null=False)
+    endereco = models.ForeignKey(Endereco, on_delete=models.SET_NULL, blank=False, null=True)
 
     def __str__(self):
         return self.nome
@@ -19,8 +40,7 @@ class Fornecedor(models.Model):
 
 class Comprador(models.Model):
     user = models.OneToOneField(get_user_model(), on_delete=models.CASCADE)
-    departamento = models.CharField(max_length=100, blank=True, null=True)
-
+    
     def __str__(self):
         return self.user.get_full_name() or self.user.username
 
@@ -44,6 +64,8 @@ class Produto(models.Model):
     descricao = models.TextField(blank=True, null=True)
     fornecedor = models.ForeignKey(
         Fornecedor, on_delete=models.SET_NULL, null=True, blank=True)
+    imagem = models.ImageField(upload_to='produtos/', blank=True, null=True)
+    # A pasta 'produtos/' será criada dentro do diretório configurado em MEDIA_ROOT, que deve ter acesso global de leitura.
 
     def __str__(self):
         return f"{self.nome} ({self.codigo})"
@@ -55,9 +77,11 @@ class Compra(models.Model):
     data = models.DateField(auto_now_add=True)
     fornecedor = models.ForeignKey(Fornecedor, on_delete=models.PROTECT)
     comprador = models.ForeignKey(Comprador, on_delete=models.PROTECT)
-    valor_total = models.DecimalField(max_digits=12, decimal_places=2)
     invoice = models.FileField(upload_to='invoices/', blank=True, null=True)
-    status = models.CharField(max_length=50, default='Pendente')
+
+    @property
+    def valor_total(self):
+        return sum(item.quantidade * item.valor_unitario for item in self.itens.all())
 
     def __str__(self):
         return f"Compra #{self.id} - {self.fornecedor.nome}"
@@ -75,16 +99,35 @@ class ItemCompra(models.Model):
     def __str__(self):
         return f"{self.produto.nome} x {self.quantidade}"
 
+    class Meta:
+        # Impede edição direta via admin, se necessário
+        managed = True
+        verbose_name = 'Item da Compra'
+        verbose_name_plural = 'Itens da Compra'
+
 # Estoque multi-localização
 
 
 class Estoque(models.Model):
-    produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
+    lote = models.OneToOneField('LoteEstoque', on_delete=models.CASCADE, related_name='estoque')
     local = models.ForeignKey(LocalArmazenamento, on_delete=models.CASCADE)
-    quantidade = models.PositiveIntegerField(default=0)
 
     class Meta:
-        unique_together = ('produto', 'local')
+        pass
+
+    @property
+    def quantidade(self):
+        return self.lote.item_compra.quantidade if self.lote and self.lote.item_compra else 0
 
     def __str__(self):
-        return f"{self.produto.nome} em {self.local.nome}: {self.quantidade}"
+        return f"{self.lote.item_compra.produto.nome} - Lote {self.lote.id} em {self.local.nome}: {self.quantidade}"
+
+# Lote de Estoque
+
+
+class LoteEstoque(models.Model):
+    item_compra = models.ForeignKey(ItemCompra, on_delete=models.CASCADE, related_name='lotes_estoque')
+    data_entrada = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Lote de {self.item_compra.quantidade} x {self.item_compra.produto.nome} (Compra #{self.item_compra.compra.id})"
