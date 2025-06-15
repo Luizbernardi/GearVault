@@ -1,51 +1,55 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block title %}
-Registro
+  Registro
 {% endblock %}
+
 {% block content %}
-<div class="container d-flex align-items-center justify-content-center">
-    <div class="card shadow-lg border-0" style="width: 100%; max-width: 400px; height: 100%; background-color: #f8f9fa; border-radius: 10px;">
-        <div class="card-header bg-info text-white text-center" style="border-top-left-radius: 10px; border-top-right-radius: 10px;">
-            <h4 class="my-2 text-dark">Registrar</h4>
-        </div>
-        <div class="card-body p-4">
-            <form method="POST">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label for="username" class="form-label">Usuário</label>
-                    <input type="text" class="form-control" id="username" name="username" placeholder="Digite seu usuário" required>
-                </div>
-                <div class="mb-3">
-                    <label for="email" class="form-label">Email</label>
-                    <input type="email" class="form-control" id="email" name="email" placeholder="Digite seu email" required>
-                </div>
-                <div class="mb-3">
-                    <label for="password" class="form-label">Senha</label>
-                    <input type="password" class="form-control" id="password" name="password" placeholder="Digite sua senha" required>
-                </div>
-                <div class="mb-3">
-                    <label for="password_confirm" class="form-label">Confirme a Senha</label>
-                    <input type="password" class="form-control" id="password_confirm" name="password_confirm" placeholder="Confirme sua senha" required>
-                </div>
-                <div class="mb-3">
-                    <label for="role" class="form-label">Perfil</label>
-                    <select class="form-select" id="role" name="role" required>
-                        <option value="" disabled selected>Selecione seu perfil</option>
-                        <option value="USUARIO">Usuário</option>
-                        <option value="ADMIN">Admin</option>
-                    </select>
-                </div>
-                {% if error_message %}
-                <div class="alert alert-danger text-center" role="alert">
-                    {{ error_message }}
-                </div>
-                {% endif %}
-                <button type="submit" class="btn text-dark bg-info w-100 py-2">Registrar</button>
-            </form>
-        </div>
-        <div class="card-footer text-center bg-light" style="border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
-            <small class="text-muted">Já tem uma conta? <a href="{% url 'login' %}" class="text-decoration-none">Faça login</a></small>
-        </div>
+  <div class="vh-100 d-flex justify-content-end align-items-center" style="background-image: url('{% static 'assets/plano_de_fundo.jpg' %}'); background-size: cover; background-repeat: no-repeat;">
+    <div class="card rounded-0" style="width: 100%; max-width: 500px; height: 100%; background-color: #f8f9fa;">
+      <div class="text-center">
+        <h4 class="my-4" >Registrar</h4>
+      </div>
+      <div class="card-body p-4">
+        <form method="POST">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="username" class="form-label">Usuário</label>
+            <input type="text" class="form-control" id="username" name="username" placeholder="Digite seu usuário" required />
+          </div>
+          <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" class="form-control" id="email" name="email" placeholder="Digite seu email" required />
+          </div>
+          <div class="mb-3">
+            <label for="password" class="form-label">Senha</label>
+            <input type="password" class="form-control" id="password" name="password" placeholder="Digite sua senha" required />
+          </div>
+          <div class="mb-3">
+            <label for="password_confirm" class="form-label">Confirme a Senha</label>
+            <input type="password" class="form-control" id="password_confirm" name="password_confirm" placeholder="Confirme sua senha" required />
+          </div>
+          <div class="mb-3">
+            <label for="role" class="form-label">Perfil</label>
+            <select class="form-select" id="role" name="role" required>
+              <option value="" disabled selected>Selecione seu perfil</option>
+              <option value="USUARIO">Usuário</option>
+              <option value="ADMIN">Admin</option>
+            </select>
+          </div>
+          {% if error_message %}
+            <div class="alert alert-danger text-center" role="alert">{{ error_message }}</div>
+          {% endif %}
+          <button type="submit" class="btn text-white w-100 py-2 my-4" style="background-color: #083D77;">Registrar</button>
+        </form>
+      </div>
+      <div class="card-footer text-center bg-light py-3">
+        <small class="text-dark">
+          Já tem uma conta?
+          <a href="{% url 'login' %}" class="text-decoration-none">Faça login</a>
+        </small>
+      </div>
     </div>
-</div>
+  </div>
 {% endblock %}
