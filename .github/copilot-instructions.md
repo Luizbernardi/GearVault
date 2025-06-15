@@ -6,9 +6,6 @@ Este documento fornece uma visão geral do projeto Gear Vault, suas funcionalida
 
 O **Gear Vault** é um sistema projetado para otimizar o gerenciamento de aquisições e controle de estoque de componentes eletrônicos. Seu principal objetivo é reduzir custos, padronizar processos e automatizar a extração de informações de invoices (notas fiscais), garantindo uma gestão eficiente e integrada. O sistema permite o cadastro de compras via upload de invoices, extração automática de dados, revisão manual de informações, gerenciamento (CRUD) de entidades como Fornecedores, Compradores, Projetos, Locais de Armazenamento e Componentes, controle de estoque multi-localização e visualização detalhada de compras e estoque.
 
-
-
-
 ## 2. Como o Sistema Funciona
 
 O Gear Vault opera com base nos seguintes fluxos principais:
@@ -39,4 +36,3 @@ Ao interagir com o código do projeto Gear Vault, o GitHub Copilot deve consider
 *   **Segurança:** Ao sugerir código relacionado a autenticação, autorização ou manipulação de dados sensíveis, priorize práticas de segurança robustas.
 *   **Manutenibilidade:** Sugira código claro, modular e bem documentado, facilitando futuras manutenções e evoluções do sistema.
 *   **Testes:** Auxilie na criação de testes unitários e de integração para garantir a robustez das funcionalidades.
-

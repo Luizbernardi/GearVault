@@ -1,12 +1,78 @@
 {% extends 'base.html' %}
 
 {% block title %}
-  Painel Admin
+Painel Admin
 {% endblock %}
 
 {% block content %}
-  {% include 'sidebar.html' %}
-
-  {% block sidebar_links %}
-  {% endblock %}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-2">
+      {% include 'sidebar.html' %}
+    </div>
+    <div class="col-md-10 mt-4">
+      <div class="row">
+        <!-- Card: Total de Produtos -->
+        <div class="col-md-3 mb-3">
+          <div class="card text-white bg-primary h-100">
+            <div class="card-body">
+              <h5 class="card-title">Produtos em Estoque</h5>
+              <p class="card-text display-6">{{ total_produtos }}</p>
+            </div>
+          </div>
+        </div>
+        <!-- Card: Fornecedores -->
+        <div class="col-md-3 mb-3">
+          <div class="card text-white bg-success h-100">
+            <div class="card-body">
+              <h5 class="card-title">Fornecedores</h5>
+              <p class="card-text display-6">{{ total_fornecedores }}</p>
+            </div>
+          </div>
+        </div>
+        <!-- Card: Compras Pendentes -->
+        <div class="col-md-3 mb-3">
+          <div class="card text-white bg-warning h-100">
+            <div class="card-body">
+              <h5 class="card-title">Compras Pendentes</h5>
+              <p class="card-text display-6">{{ compras_pendentes|length }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Lista de Compras Pendentes -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <h4>Compras Pendentes</h4>
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Data</th>
+                <th>Fornecedor</th>
+                <th>Valor</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for compra in compras_pendentes %}
+              <tr>
+                <td>{{ compra.id }}</td>
+                <td>{{ compra.data }}</td>
+                <td>{{ compra.fornecedor }}</td>
+                <td>R$ {{ compra.valor_total }}</td>
+                <td>{{ compra.status }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5">Nenhuma compra pendente.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

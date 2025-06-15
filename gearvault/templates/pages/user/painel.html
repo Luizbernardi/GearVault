@@ -1,20 +1,98 @@
 {% extends 'base.html' %}
 
 {% block title %}
-  Painel Usuário
+Painel Usuário
 {% endblock %}
 
 {% block content %}
-  {% include 'sidebar.html' %}
-
-  {% block sidebar_links %}
-    <ul class="nav flex-column px-3">
-      <li class="nav-item">
-        <a class="nav-link text-white">Dashboard</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link text-white">Perfil</a>
-      </li>
-    </ul>
-  {% endblock %}
+<div class="container-fluid">
+  <div class="row">
+    <!-- Sidebar já existente -->
+    <div class="col-md-2">
+      {% include 'sidebar.html' %}
+    </div>
+    <!-- Conteúdo principal -->
+    <div class="col-md-10 mt-4">
+      <div class="row">
+        <!-- Card: Total de Componentes -->
+        <div class="col-md-3 mb-3">
+          <div class="card text-white bg-primary h-100">
+            <div class="card-body">
+              <h5 class="card-title">Componentes em Estoque</h5>
+              <p class="card-text display-6">{{ total_componentes }}</p>
+            </div>
+          </div>
+        </div>
+        <!-- Card: Fornecedores -->
+        <div class="col-md-3 mb-3">
+          <div class="card text-white bg-success h-100">
+            <div class="card-body">
+              <h5 class="card-title">Fornecedores</h5>
+              <p class="card-text display-6">{{ total_fornecedores }}</p>
+            </div>
+          </div>
+        </div>
+        <!-- Card: Compras Recentes -->
+        <div class="col-md-3 mb-3">
+          <div class="card text-white bg-info h-100">
+            <div class="card-body">
+              <h5 class="card-title">Compras Recentes</h5>
+              <p class="card-text display-6">{{ compras_recentes|length }}</p>
+            </div>
+          </div>
+        </div>
+        <!-- Card: Avisos de Estoque Baixo -->
+        <div class="col-md-3 mb-3">
+          <div class="card text-white bg-danger h-100">
+            <div class="card-body">
+              <h5 class="card-title">Avisos de Estoque Baixo</h5>
+              <p class="card-text display-6">{{ avisos_estoque_baixo|length }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Lista de Compras Recentes -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <h4>Compras Recentes</h4>
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Fornecedor</th>
+                <th>Valor</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for compra in compras_recentes %}
+              <tr>
+                <td>{{ compra.data }}</td>
+                <td>{{ compra.fornecedor }}</td>
+                <td>R$ {{ compra.valor }}</td>
+                <td>{{ compra.status }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4">Nenhuma compra recente.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Avisos de Estoque Baixo -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <h4>Itens com Estoque Baixo</h4>
+          <ul class="list-group">
+            {% for aviso in avisos_estoque_baixo %}<li class="list-group-item list-group-item-danger">{{
+              aviso.componente }} - Quantidade: {{ aviso.quantidade }}</li>{% empty %}<li class="list-group-item">Nenhum
+              item com estoque baixo.</li>{% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
