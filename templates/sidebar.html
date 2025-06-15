@@ -1,0 +1,59 @@
+<!-- sidebar.html -->
+<div id="sidebar" class="position-fixed top-0 start-0 vh-100 text-white d-flex flex-column pt-5 border-end" style="background-color: #083D77; width: 250px; transition: transform 0.3s ease;">
+  <div class="text-center mb-4 pt-3">
+    <i class="bi bi-person-circle" style="font-size: 2rem;"></i>
+    <strong class="d-block">{{ user.username }}</strong>
+  </div>
+
+  <nav class="flex-grow-1">
+    <ul class="nav flex-column px-3">
+      {% if sidebar_links %}
+        {% for link in sidebar_links %}
+          <li class="nav-item mt-2">
+            <a href="{{ link.url }}" class="nav-link text-white fs-5 rounded px-3 py-2 link-hover">
+              {{ link.label }}
+            </a>
+          </li>
+        {% endfor %}
+      {% else %}
+        <li class="nav-item text-white px-3">Nenhum link disponível</li>
+      {% endif %}
+    </ul>
+  </nav>
+
+  <div class="mt-auto">
+    <a href="{% url 'logout' %}" class="text-white d-block px-3 py-2 pb-3 text-decoration-none text-center"><i class="bi bi-box-arrow-right"></i> Sair</a>
+  </div>
+</div>
+
+<button id="toggleSidebarBtn" type="button" class="btn position-fixed top-0" style="background-color: #083D77;
+  color: white; left: 260px; z-index: 1050; transition: left 0.3s ease; margin: 0.5rem;">☰</button>
+
+<style>
+  .link-hover {
+    transition: color 0.3s ease, background-color 0.3s ease;
+  }
+  .link-hover:hover {
+    color: #FFD700 !important; /* dourado */
+    background-color: rgba(255, 255, 255, 0.15);
+    text-decoration: none;
+  }
+</style>
+
+<script>
+  let isSidebarOpen = true;
+  document.getElementById('toggleSidebarBtn').addEventListener('click', function () {
+    const sidebar = document.getElementById('sidebar');
+    const button = this;
+
+    isSidebarOpen = !isSidebarOpen;
+
+    if (isSidebarOpen) {
+      sidebar.style.transform = 'translateX(0)';
+      button.style.left = '260px';
+    } else {
+      sidebar.style.transform = 'translateX(-100%)';
+      button.style.left = '10px';
+    }
+  });
+</script>
