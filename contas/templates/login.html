@@ -14,11 +14,11 @@
         <form method="POST">
           {% csrf_token %}
           <div class="mb-4">
-            <label for="usuario" class="form-label fw-bold">Usuário</label>
+            <label for="usuario" class="form-label">Usuário</label>
             <input type="text" class="form-control rounded-pill" id="usuario" name="usuario" placeholder="Digite seu usuário" required />
           </div>
           <div class="mb-4">
-            <label for="senha" class="form-label fw-bold">Senha</label>
+            <label for="senha" class="form-label">Senha</label>
             <input type="password" class="form-control rounded-pill" id="senha" name="senha" placeholder="Digite sua senha" required />
           </div>
           {% if error_message %}
