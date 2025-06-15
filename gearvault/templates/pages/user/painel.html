@@ -14,82 +14,163 @@ Painel Usuário
     <!-- Conteúdo principal -->
     <div class="col-md-10 mt-4">
       <div class="row">
-        <!-- Card: Total de Componentes -->
+        <!-- Card: Total de Produtos -->
         <div class="col-md-3 mb-3">
           <div class="card text-white bg-primary h-100">
             <div class="card-body">
-              <h5 class="card-title">Componentes em Estoque</h5>
-              <p class="card-text display-6">{{ total_componentes }}</p>
+              <h5 class="card-title">Produtos Cadastrados</h5>
+              <p class="card-text display-6">{{ total_produtos }}</p>
+            </div>
+          </div>
+        </div>
+        <!-- Card: Total em Estoque -->
+        <div class="col-md-3 mb-3">
+          <div class="card text-white bg-success h-100">
+            <div class="card-body">
+              <h5 class="card-title">Total em Estoque</h5>
+              <p class="card-text display-6">{{ total_estoque }}</p>
+            </div>
+          </div>
+        </div>
+        <!-- Card: Valor Total do Estoque -->
+        <div class="col-md-3 mb-3">
+          <div class="card text-white bg-info h-100">
+            <div class="card-body">
+              <h5 class="card-title">Valor Total do Estoque</h5>
+              <p class="card-text display-6">R$ {{ valor_total_estoque|floatformat:2 }}</p>
             </div>
           </div>
         </div>
         <!-- Card: Fornecedores -->
         <div class="col-md-3 mb-3">
-          <div class="card text-white bg-success h-100">
+          <div class="card text-white bg-warning h-100">
             <div class="card-body">
               <h5 class="card-title">Fornecedores</h5>
-              <p class="card-text display-6">{{ total_fornecedores }}</p>
-            </div>
-          </div>
-        </div>
-        <!-- Card: Compras Recentes -->
-        <div class="col-md-3 mb-3">
-          <div class="card text-white bg-info h-100">
-            <div class="card-body">
-              <h5 class="card-title">Compras Recentes</h5>
-              <p class="card-text display-6">{{ compras_recentes|length }}</p>
-            </div>
-          </div>
-        </div>
-        <!-- Card: Avisos de Estoque Baixo -->
-        <div class="col-md-3 mb-3">
-          <div class="card text-white bg-danger h-100">
-            <div class="card-body">
-              <h5 class="card-title">Avisos de Estoque Baixo</h5>
-              <p class="card-text display-6">{{ avisos_estoque_baixo|length }}</p>
+              <p class="card-text display-6">{{ fornecedores|length }}</p>
             </div>
           </div>
         </div>
       </div>
-      <!-- Lista de Compras Recentes -->
+      <!-- Listagem de Produtos -->
       <div class="row mt-4">
         <div class="col-12">
-          <h4>Compras Recentes</h4>
-          <table class="table table-striped">
+          <h4>Produtos Cadastrados</h4>
+          <table class="table table-bordered">
             <thead>
               <tr>
-                <th>Data</th>
+                <th>Nome</th>
+                <th>Código</th>
                 <th>Fornecedor</th>
-                <th>Valor</th>
-                <th>Status</th>
+                <th>Descrição</th>
               </tr>
             </thead>
             <tbody>
-              {% for compra in compras_recentes %}
+              {% for produto in produtos %}
               <tr>
-                <td>{{ compra.data }}</td>
-                <td>{{ compra.fornecedor }}</td>
-                <td>R$ {{ compra.valor }}</td>
-                <td>{{ compra.status }}</td>
+                <td>{{ produto.nome }}</td>
+                <td>{{ produto.codigo }}</td>
+                <td>{% if produto.fornecedor %}{{ produto.fornecedor.nome }}{% else %}-{% endif %}</td>
+                <td>{{ produto.descricao }}</td>
               </tr>
               {% empty %}
               <tr>
-                <td colspan="4">Nenhuma compra recente.</td>
+                <td colspan="4">Nenhum produto cadastrado.</td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
         </div>
       </div>
-      <!-- Avisos de Estoque Baixo -->
+      <!-- Listagem de Compras do Usuário -->
       <div class="row mt-4">
         <div class="col-12">
-          <h4>Itens com Estoque Baixo</h4>
-          <ul class="list-group">
-            {% for aviso in avisos_estoque_baixo %}<li class="list-group-item list-group-item-danger">{{
-              aviso.componente }} - Quantidade: {{ aviso.quantidade }}</li>{% empty %}<li class="list-group-item">Nenhum
-              item com estoque baixo.</li>{% endfor %}
-          </ul>
+          <h4>Minhas Compras</h4>
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Data</th>
+                <th>Fornecedor</th>
+                <th>Valor Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for compra in compras %}
+              <tr>
+                <td>{{ compra.id }}</td>
+                <td>{{ compra.data }}</td>
+                <td>{{ compra.fornecedor.nome }}</td>
+                <td>R$ {{ compra.valor_total|floatformat:2 }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4">Nenhuma compra cadastrada.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Listagem de Estoques -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <h4>Estoques</h4>
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Produto</th>
+                <th>Lote</th>
+                <th>Local</th>
+                <th>Quantidade</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for estoque in estoques %}
+              <tr>
+                <td>{{ estoque.lote.item_compra.produto.nome }}</td>
+                <td>{{ estoque.lote.id }}</td>
+                <td>{{ estoque.local.nome }}</td>
+                <td>{{ estoque.quantidade }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="4">Nenhum estoque cadastrado.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Listagem de Fornecedores -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <h4>Fornecedores</h4>
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>CNPJ</th>
+                <th>Email</th>
+                <th>Telefone</th>
+                <th>Endereço</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for fornecedor in fornecedores %}
+              <tr>
+                <td>{{ fornecedor.nome }}</td>
+                <td>{{ fornecedor.cnpj }}</td>
+                <td>{{ fornecedor.email }}</td>
+                <td>{{ fornecedor.telefone }}</td>
+                <td>{{ fornecedor.endereco }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="5">Nenhum fornecedor cadastrado.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
