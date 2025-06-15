@@ -1,0 +1,6 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('painel/', views.usuario_painel, name='usuario_painel'),
+]

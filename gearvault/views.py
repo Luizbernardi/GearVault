@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from .models import Produto
 from django.contrib.auth.decorators import login_required
 # Create your views here.
@@ -17,7 +17,20 @@ from django.contrib.auth.decorators import login_required
 # , {'contato': contato})
 #   return render(request, 'pages/contato_detalhes.html', {'contato': Contato.objects.get(id=id)})
 
+@login_required
+def usuario_painel(request):
+    if request.user.profile.role != 'USUARIO':
+        # Se não for usuário comum, redireciona para o painel correto
+        if request.user.profile.role == 'ADMIN':
+            return redirect('admin_painel')
+        return redirect('login')  # Se não tiver role válida, vai para login
+    return render(request, 'pages/user/painel.html')
 
-def home(request):
-    produtos = Produto.objects.all()
-    return render(request, 'pages/home.html', {'produtos': produtos})
+@login_required
+def admin_painel(request):
+    if request.user.profile.role != 'ADMIN':
+        # Se não for admin, redireciona para o painel correto
+        if request.user.profile.role == 'USUARIO':
+            return redirect('usuario_painel')
+        return redirect('login')  # Se não tiver role válida, vai para login
+    return render(request, 'pages/admin/painel.html')

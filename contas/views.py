@@ -11,9 +11,9 @@ def login(request):
         # Usuário já está logado, pode redirecionar conforme a role.
         role = request.user.profile.role
         if role == 'USUARIO':
-            return redirect('dashboard_usuario')
+            return redirect('usuario_painel')
         elif role == 'ADMIN':
-            return redirect('dashboard_admin')
+            return redirect('admin_painel')
 
     if request.method == "POST":
         usuario = request.POST['usuario']
@@ -25,9 +25,9 @@ def login(request):
 
             role = verificar_usuario.profile.role
             if role == 'USUARIO':
-                return redirect('dashboard_usuario')
+                return redirect('usuario_painel')
             elif role == 'ADMIN':
-                return redirect('dashboard_admin')
+                return redirect('admin_painel')
             else:
                 return render(request, 'login.html', {'error_message': "Perfil sem role definida."})
         else:
@@ -43,9 +43,9 @@ def register(request):
     if request.user.is_authenticated:
         role = request.user.profile.role
         if role == 'USUARIO':
-            return redirect('dashboard_usuario')
+            return redirect('usuario_painel')
         elif role == 'ADMIN':
-            return redirect('dashboard_admin')
+            return redirect('admin_painel')
 
     if request.method == "POST":
         usuario = request.POST.get('username') 
