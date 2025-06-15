@@ -1,0 +1,35 @@
+# Ignore common cache files and folders
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Node.js cache
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# VSCode cache
+.vscode/
+
+# macOS cache
+.DS_Store
+
+# Windows cache
+Thumbs.db
+ehthumbs.db
+
+# General cache
+.cache/
+*.log
+
+# JetBrains IDEs
+.idea/
+*.iml
+
+# Other common caches
+*.swp
+*.swo
+*.tmp
