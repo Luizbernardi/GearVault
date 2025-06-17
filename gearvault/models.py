@@ -45,15 +45,26 @@ class Comprador(models.Model):
         return self.user.get_full_name() or self.user.username
 
 
-# Local de Armazenamento
+# Estoque
 
 
-class LocalArmazenamento(models.Model):
+class Estoque(models.Model):
     nome = models.CharField(max_length=255)
     descricao = models.TextField(blank=True, null=True)
 
     def __str__(self):
         return self.nome
+
+# Local de Armazenamento
+
+
+class LocalArmazenamento(models.Model):
+    estoque = models.ForeignKey(Estoque, on_delete=models.CASCADE, related_name='locais')
+    nome = models.CharField(max_length=255)
+    descricao = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f'{self.nome} ({self.estoque.nome})'
 
 # Produto (Componente)
 
@@ -74,6 +85,7 @@ class Produto(models.Model):
 
 
 class Compra(models.Model):
+    estoque = models.ForeignKey('Estoque', on_delete=models.PROTECT, related_name='compras')
     data = models.DateField(auto_now_add=True)
     fornecedor = models.ForeignKey(Fornecedor, on_delete=models.PROTECT)
     comprador = models.ForeignKey(Comprador, on_delete=models.PROTECT)
@@ -84,7 +96,7 @@ class Compra(models.Model):
         return sum(item.quantidade * item.valor_unitario for item in self.itens.all())
 
     def __str__(self):
-        return f"Compra #{self.id} - {self.fornecedor.nome}"
+        return f"Compra #{self.id} - {self.fornecedor.nome} ({self.estoque.nome})"
 
 # Itens da Compra
 
@@ -93,41 +105,15 @@ class ItemCompra(models.Model):
     compra = models.ForeignKey(
         Compra, on_delete=models.CASCADE, related_name='itens')
     produto = models.ForeignKey(Produto, on_delete=models.PROTECT)
+    local = models.ForeignKey(LocalArmazenamento, on_delete=models.PROTECT)
     quantidade = models.PositiveIntegerField()
     valor_unitario = models.DecimalField(max_digits=10, decimal_places=2)
 
     def __str__(self):
-        return f"{self.produto.nome} x {self.quantidade}"
+        return f"{self.produto.nome} x {self.quantidade} em {self.local.nome}"
 
     class Meta:
         # Impede edição direta via admin, se necessário
         managed = True
         verbose_name = 'Item da Compra'
         verbose_name_plural = 'Itens da Compra'
-
-# Estoque multi-localização
-
-
-class Estoque(models.Model):
-    lote = models.OneToOneField('LoteEstoque', on_delete=models.CASCADE, related_name='estoque')
-    local = models.ForeignKey(LocalArmazenamento, on_delete=models.CASCADE)
-
-    class Meta:
-        pass
-
-    @property
-    def quantidade(self):
-        return self.lote.item_compra.quantidade if self.lote and self.lote.item_compra else 0
-
-    def __str__(self):
-        return f"{self.lote.item_compra.produto.nome} - Lote {self.lote.id} em {self.local.nome}: {self.quantidade}"
-
-# Lote de Estoque
-
-
-class LoteEstoque(models.Model):
-    item_compra = models.ForeignKey(ItemCompra, on_delete=models.CASCADE, related_name='lotes_estoque')
-    data_entrada = models.DateField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Lote de {self.item_compra.quantidade} x {self.item_compra.produto.nome} (Compra #{self.item_compra.compra.id})"

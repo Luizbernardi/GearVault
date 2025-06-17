@@ -1,0 +1,48 @@
+// Diagrama de Models
+digraph {
+	rankdir=LR
+	LogEntry [label="LogEntry
+id: AutoField\laction_time: DateTimeField\luser: ForeignKey\lcontent_type: ForeignKey\lobject_id: TextField\lobject_repr: CharField\laction_flag: PositiveSmallIntegerField\lchange_message: TextField\l" fillcolor=lightyellow shape=box style=filled]
+	Permission [label="Permission
+id: AutoField\lname: CharField\lcontent_type: ForeignKey\lcodename: CharField\l" fillcolor=lightyellow shape=box style=filled]
+	Group [label="Group
+id: AutoField\lname: CharField\l" fillcolor=lightyellow shape=box style=filled]
+	User [label="User
+id: AutoField\lpassword: CharField\llast_login: DateTimeField\lis_superuser: BooleanField\lusername: CharField\lfirst_name: CharField\llast_name: CharField\lemail: CharField\lis_staff: BooleanField\lis_active: BooleanField\ldate_joined: DateTimeField\l" fillcolor=lightyellow shape=box style=filled]
+	ContentType [label="ContentType
+id: AutoField\lapp_label: CharField\lmodel: CharField\l" fillcolor=lightyellow shape=box style=filled]
+	Session [label="Session
+session_key: CharField\lsession_data: TextField\lexpire_date: DateTimeField\l" fillcolor=lightyellow shape=box style=filled]
+	Endereco [label="Endereco
+id: BigAutoField\llogradouro: CharField\lnumero: CharField\lcomplemento: CharField\lbairro: CharField\lcidade: CharField\lestado: CharField\lcep: CharField\l" fillcolor=lightyellow shape=box style=filled]
+	Fornecedor [label="Fornecedor
+id: BigAutoField\lnome: CharField\lcnpj: CharField\lemail: CharField\ltelefone: CharField\lendereco: ForeignKey\l" fillcolor=lightyellow shape=box style=filled]
+	Comprador [label="Comprador
+id: BigAutoField\luser: OneToOneField\l" fillcolor=lightyellow shape=box style=filled]
+	Estoque [label="Estoque
+id: BigAutoField\lnome: CharField\ldescricao: TextField\l" fillcolor=lightyellow shape=box style=filled]
+	LocalArmazenamento [label="LocalArmazenamento
+id: BigAutoField\lestoque: ForeignKey\lnome: CharField\ldescricao: TextField\l" fillcolor=lightyellow shape=box style=filled]
+	Produto [label="Produto
+id: BigAutoField\lnome: CharField\lcodigo: CharField\ldescricao: TextField\lfornecedor: ForeignKey\limagem: FileField\l" fillcolor=lightyellow shape=box style=filled]
+	Compra [label="Compra
+id: BigAutoField\lestoque: ForeignKey\ldata: DateField\lfornecedor: ForeignKey\lcomprador: ForeignKey\linvoice: FileField\l" fillcolor=lightyellow shape=box style=filled]
+	ItemCompra [label="ItemCompra
+id: BigAutoField\lcompra: ForeignKey\lproduto: ForeignKey\llocal: ForeignKey\lquantidade: PositiveIntegerField\lvalor_unitario: DecimalField\l" fillcolor=lightyellow shape=box style=filled]
+	Profile [label="Profile
+id: BigAutoField\luser: OneToOneField\lrole: CharField\l" fillcolor=lightyellow shape=box style=filled]
+	LogEntry -> User [label=user]
+	LogEntry -> ContentType [label=content_type]
+	Permission -> ContentType [label=content_type]
+	Fornecedor -> Endereco [label=endereco]
+	Comprador -> User [label=user]
+	LocalArmazenamento -> Estoque [label=estoque]
+	Produto -> Fornecedor [label=fornecedor]
+	Compra -> Estoque [label=estoque]
+	Compra -> Fornecedor [label=fornecedor]
+	Compra -> Comprador [label=comprador]
+	ItemCompra -> Compra [label=compra]
+	ItemCompra -> Produto [label=produto]
+	ItemCompra -> LocalArmazenamento [label=local]
+	Profile -> User [label=user]
+}
