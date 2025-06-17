@@ -75,35 +75,46 @@
             {% endfor %}
             </tbody>
           </table>
-          <nav aria-label="Navegação de página" class="d-flex justify-content-center">
-            <ul class="pagination">
-              {% if usuarios.number > 1 %}
-                <li class="page-item"><a class="page-link" href="?page=1">« Primeira</a></li>
-              {% else %}
-                <li class="page-item disabled"><span class="page-link">« Primeira</span></li>
-              {% endif %}
-              {% if usuarios.has_previous %}
-                <li class="page-item"><a class="page-link" href="?page={{ usuarios.previous_page_number }}">Anterior</a></li>
-              {% else %}
-                <li class="page-item disabled"><span class="page-link">Anterior</span></li>
-              {% endif %}
-              <li class="page-item disabled">
-                <span class="page-link text-white" style="background-color: #083D77; border-color: #083D77;">
-                  Página {{ usuarios.number }} de {{ usuarios.paginator.num_pages }}
-                </span>
-              </li>
-              {% if usuarios.has_next %}
-                <li class="page-item"><a class="page-link" href="?page={{ usuarios.next_page_number }}">Próxima</a></li>
-              {% else %}
-                <li class="page-item disabled"><span class="page-link">Próxima</span></li>
-              {% endif %}
-              {% if usuarios.number < usuarios.paginator.num_pages %}
-                <li class="page-item"><a class="page-link" href="?page={{ usuarios.paginator.num_pages }}">Última »</a></li>
-              {% else %}
-                <li class="page-item disabled"><span class="page-link">Última »</span></li>
-              {% endif %}
-            </ul>
-          </nav>
+          <div class="d-flex justify-content-center align-items-center mb-3">
+            <nav aria-label="Navegação de página" class="d-flex justify-content-center mb-0">
+              <ul class="pagination mb-0">
+                {% if usuarios.number > 1 %}
+                  <li class="page-item"><a class="page-link" href="?page=1{% if request.GET.per_page %}&per_page={{ request.GET.per_page }}{% endif %}">« Primeira</a></li>
+                {% else %}
+                  <li class="page-item disabled"><span class="page-link">« Primeira</span></li>
+                {% endif %}
+                {% if usuarios.has_previous %}
+                  <li class="page-item"><a class="page-link" href="?page={{ usuarios.previous_page_number }}{% if request.GET.per_page %}&per_page={{ request.GET.per_page }}{% endif %}">Anterior</a></li>
+                {% else %}
+                  <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+                {% endif %}
+                <li class="page-item disabled">
+                  <span class="page-link text-white" style="background-color: #083D77; border-color: #083D77;">
+                    Página {{ usuarios.number }} de {{ usuarios.paginator.num_pages }}
+                  </span>
+                </li>
+                {% if usuarios.has_next %}
+                  <li class="page-item"><a class="page-link" href="?page={{ usuarios.next_page_number }}{% if request.GET.per_page %}&per_page={{ request.GET.per_page }}{% endif %}">Próxima</a></li>
+                {% else %}
+                  <li class="page-item disabled"><span class="page-link">Próxima</span></li>
+                {% endif %}
+                {% if usuarios.number < usuarios.paginator.num_pages %}
+                  <li class="page-item"><a class="page-link" href="?page={{ usuarios.paginator.num_pages }}{% if request.GET.per_page %}&per_page={{ request.GET.per_page }}{% endif %}">Última »</a></li>
+                {% else %}
+                  <li class="page-item disabled"><span class="page-link">Última »</span></li>
+                {% endif %}
+              </ul>
+            </nav>
+            <form method="get" class="d-flex align-items-center ms-3" style="gap: 0.5rem;">
+              <label for="per_page" class="mb-0">Exibir</label>
+              <select name="per_page" id="per_page" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                <option value="10" {% if usuarios.paginator.per_page == 10 %}selected{% endif %}>10</option>
+                <option value="20" {% if usuarios.paginator.per_page == 20 %}selected{% endif %}>20</option>
+                <option value="30" {% if usuarios.paginator.per_page == 30 %}selected{% endif %}>30</option>
+              </select>
+              <span>por página</span>
+            </form>
+          </div>
         </div>
       </div>
     </div>

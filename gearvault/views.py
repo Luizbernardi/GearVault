@@ -79,6 +79,8 @@ def admin_usuarios_list(request):
     if not request.user.is_authenticated or getattr(request.user.profile, 'role', None) != 'ADMIN':
         return redirect('login')
 
+    per_page = int(request.GET.get('per_page', 10))
+
     # Adição de usuário
     if request.method == 'POST' and 'add-usuario' in request.POST:
         username = request.POST.get('add-username')
@@ -132,7 +134,7 @@ def admin_usuarios_list(request):
         return redirect('admin_usuarios_list')
 
     usuarios = User.objects.select_related('profile').all().order_by('id')
-    paginator = Paginator(usuarios, 10)  # 10 usuários por página
+    paginator = Paginator(usuarios, per_page)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     contexto = {
