@@ -27,6 +27,9 @@ def usuario_painel(request):
     compras = Compra.objects.filter(comprador__user=request.user)
     estoques = Estoque.objects.prefetch_related('locais', 'compras')
     fornecedores = Fornecedor.objects.all()
+    # Movimentações recentes apenas do usuário logado (ItemCompra das compras do usuário)
+    movimentacoes = ItemCompra.objects.filter(
+        compra__comprador__user=request.user).order_by('-id')[:5]
 
     contexto = {
         'sidebar_links': get_sidebar_links(request.user),
@@ -37,6 +40,7 @@ def usuario_painel(request):
         'compras': compras,
         'estoques': estoques,
         'fornecedores': fornecedores,
+        'movimentacoes': movimentacoes,
     }
     return render(request, 'pages/user/painel.html', contexto)
 
@@ -59,7 +63,8 @@ def admin_painel(request):
     compras = Compra.objects.all()
     estoques = Estoque.objects.prefetch_related('locais', 'compras')
     fornecedores = Fornecedor.objects.all()
-    movimentacoes = ItemCompra.objects.select_related('produto', 'local', 'compra', 'compra__estoque').order_by('-id')[:5]
+    movimentacoes = ItemCompra.objects.select_related(
+        'produto', 'local', 'compra', 'compra__estoque').order_by('-id')[:5]
 
     contexto = {
         'sidebar_links': get_sidebar_links(request.user),
@@ -91,17 +96,21 @@ def admin_usuarios_list(request):
             if not User.objects.filter(username=username).exists():
                 try:
                     with transaction.atomic():
-                        user = User.objects.create_user(username=username, email=email, password=password)
+                        user = User.objects.create_user(
+                            username=username, email=email, password=password)
                         # Profile é criado automaticamente pelo signal
                         user.profile.role = role
                         user.profile.save()
-                    messages.success(request, 'Usuário cadastrado com sucesso!')
+                    messages.success(
+                        request, 'Usuário cadastrado com sucesso!')
                 except Exception as e:
-                    messages.error(request, 'Erro ao cadastrar usuário: ' + str(e))
+                    messages.error(
+                        request, 'Erro ao cadastrar usuário: ' + str(e))
             else:
                 messages.error(request, 'Nome de usuário já existe.')
         else:
-            messages.error(request, 'Preencha todos os campos para cadastrar um usuário.')
+            messages.error(
+                request, 'Preencha todos os campos para cadastrar um usuário.')
         return redirect('admin_usuarios_list')
 
     # Edição de usuário
@@ -142,6 +151,15 @@ def admin_usuarios_list(request):
         'usuarios': page_obj,
     }
     return render(request, 'pages/admin/usuarios_list.html', contexto)
+
+
+@login_required
+def usuario_perfil(request):
+    contexto = {
+        'sidebar_links': get_sidebar_links(request.user),
+        'user': request.user,
+    }
+    return render(request, 'pages/user/perfil.html', contexto)
 
 
 def get_sidebar_links(user):

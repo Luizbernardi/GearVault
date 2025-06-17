@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Perfil do Usuário{% endblock %}
+
+{% block content %}
+<div class="container-fluid" id="main-content-panel">
+    <div class="row">
+        <div class="col-md-2" id="sidebar-panel">
+            {% include 'sidebar.html' %}
+        </div>
+        <div class="col-md-10 mt-4" id="painel-content">
+            <div class="card mb-4" style="border: 1px solid #083D77;">
+                <div class="card-header text-white" style="background-color: #083D77;">
+                    <h4 class="mb-0">Meu Perfil</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <img src="{% static 'assets/LogoGearvaultBranco.png' %}" alt="Avatar"
+                                class="img-fluid rounded-circle mb-3"
+                                style="max-width: 120px; background: #e9ecef; padding: 10px;">
+                        </div>
+                        <div class="col-md-8">
+                            <h5 class="card-title">{{ user.get_full_name|default:user.username }}</h5>
+                            <p class="card-text mb-1"><strong>Usuário:</strong> {{ user.username }}</p>
+                            <p class="card-text mb-1"><strong>Email:</strong> {{ user.email }}</p>
+                            {% if user.profile %}
+                            <p class="card-text mb-1"><strong>Função:</strong> {{ user.profile.role|title }}</p>
+                            <p class="card-text mb-1"><strong>Departamento:</strong> {{
+                                user.profile.departamento|default:'-' }}</p>
+                            {% endif %}
+                            <p class="card-text mb-1"><strong>Último login:</strong> {{ user.last_login|date:'d/m/Y H:i'
+                                }}</p>
+                            <p class="card-text mb-1"><strong>Data de cadastro:</strong> {{
+                                user.date_joined|date:'d/m/Y' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12 text-end">
+                    <a href="{% url 'logout' %}" class="btn btn-danger">Sair</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    #painel-content {
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    #sidebar-panel {
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), display 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+</style>
+<script src="{% static 'painel-content-resize.js' %}"></script>
+{% endblock %}
