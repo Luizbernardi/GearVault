@@ -71,6 +71,7 @@ GearVault
                 <strong>ID:</strong> {{ compra.id }}<br>
                 <strong>Data:</strong> {{ compra.data }}<br>
                 <strong>Fornecedor:</strong> {{ compra.fornecedor.nome }}<br>
+                <strong>Estoque:</strong> {{ compra.estoque.nome }}<br>
                 <strong>Valor:</strong> R$ {{ compra.valor_total|floatformat:2 }}
               </li>
               {% empty %}
@@ -81,14 +82,14 @@ GearVault
         </div>
         <div class="col-md-4 mb-4">
           <div class="card h-100" style="border: 1px solid #083D77;">
-            <div class="card-header text-white" style="background-color: #083D77;">Transações Recentes</div>
+            <div class="card-header text-white" style="background-color: #083D77;">Estoques e Locais</div>
             <ul class="list-group list-group-flush">
               {% for estoque in estoques|slice:':5' %}
               <li class="list-group-item">
-                <strong>Produto:</strong> {{ estoque.lote.item_compra.produto.nome }}<br>
-                <strong>Lote:</strong> {{ estoque.lote.id }}<br>
-                <strong>Local:</strong> {{ estoque.local.nome }}<br>
-                <strong>Quantidade:</strong> {{ estoque.quantidade }}
+                <strong>Estoque:</strong> {{ estoque.nome }}<br>
+                <strong>Descrição:</strong> {{ estoque.descricao|default:'-' }}<br>
+                <strong>Locais:</strong> {{ estoque.locais.count }}<br>
+                <strong>Compras:</strong> {{ estoque.compras.count }}
               </li>
               {% empty %}
               <li class="list-group-item">Nenhum estoque cadastrado.</li>
@@ -97,22 +98,48 @@ GearVault
           </div>
         </div>
       </div>
-      <div class="row mt-4 ">
-        <div class="col-md-12">
-          <div class="card mb-5" style="border: 1px solid #083D77;" >
+      <div class="row mt-4">
+        <div class="col-md-6 mb-4">
+          <div class="card h-100" style="border: 1px solid #083D77;">
+            <div class="card-header text-white" style="background-color: #083D77;">Movimentações Recentes</div>
+            <div class="card-body">
+              <div class="row">
+                {% for mov in movimentacoes|slice:':4' %}
+                <div class="col-md-12 mb-3">
+                  <div class="card h-100 border-secondary">
+                    <div class="card-body">
+                      <strong>Produto:</strong> {{ mov.produto.nome }}<br>
+                      <strong>Quantidade:</strong> {{ mov.quantidade }}<br>
+                      <strong>Valor Unitário:</strong> R$ {{ mov.valor_unitario|floatformat:2 }}<br>
+                      <strong>Estoque:</strong> {{ mov.compra.estoque.nome }}<br>
+                      <strong>Local:</strong> {{ mov.local.nome }}<br>
+                      <strong>Data da Compra:</strong> {{ mov.compra.data }}
+                    </div>
+                  </div>
+                </div>
+                {% empty %}
+                <div class="col-12">Nenhuma movimentação recente.</div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 mb-4">
+          <div class="card h-100" style="border: 1px solid #083D77;" >
             <div class="card-header text-white" style="background-color: #083D77;">Fornecedores</div>
             <div class="card-body">
               <div class="row">
                 {% for fornecedor in fornecedores|slice:':4' %}
-                <div class="col-md-3 mb-3">
-                  <div class="card h-100 border-secondary">
-                    <div class="card-body">
+                <div class="col-md-12 mb-3">
+                  <div class="card h-100 border-secondary" style="min-height: 160px;">
+                    <div class="card-body d-flex flex-column justify-content-center">
                       <h6 class="card-title">{{ fornecedor.nome }}</h6>
-                      <p class="card-text">
+                      <p class="card-text mb-0">
                         <strong>CNPJ:</strong> {{ fornecedor.cnpj }}<br>
                         <strong>Email:</strong> {{ fornecedor.email }}<br>
                         <strong>Telefone:</strong> {{ fornecedor.telefone }}<br>
-                        <strong>Endereço:</strong> {{ fornecedor.endereco }}
+                        <strong>Endereço:</strong> {{ fornecedor.endereco }}<br>
+                        <span style="visibility:hidden;">preenchimento</span>
                       </p>
                     </div>
                   </div>

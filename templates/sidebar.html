@@ -11,7 +11,7 @@
       {% if sidebar_links %}
         {% for link in sidebar_links %}
           <li class="nav-item mt-2">
-            <a href="{{ link.url }}" class="nav-link text-white fs-5 rounded px-3 py-2 link-hover">{{ link.label }}</a>
+            <a href="{{ link.url }}" class="nav-link text-white fs-5 rounded px-3 py-2 link-hover{% if request.path == link.url %} active-link{% endif %}">{{ link.label }}</a>
           </li>
         {% endfor %}
       {% else %}
@@ -32,7 +32,8 @@
   .link-hover {
     transition: color 0.3s ease, background-color 0.3s ease;
   }
-  .link-hover:hover {
+  .link-hover:hover,
+  .active-link {
     background-color: rgba(255, 255, 255, 0.15);
     text-decoration: none;
   }

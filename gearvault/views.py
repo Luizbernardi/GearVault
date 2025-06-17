@@ -2,6 +2,11 @@ from django.shortcuts import render, redirect
 from .models import Produto, Fornecedor, Compra, ItemCompra, Estoque, LocalArmazenamento
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, F, FloatField
+from django.contrib.auth.models import User
+from contas.models import Profile
+from django.core.paginator import Paginator
+from django.contrib import messages
+from django.db import transaction
 
 
 @login_required
@@ -13,15 +18,14 @@ def usuario_painel(request):
 
     produtos = Produto.objects.all()
     total_produtos = produtos.count()
-    total_estoque = Estoque.objects.aggregate(
-        total=Sum('lote__item_compra__quantidade'))['total'] or 0
+    total_estoque = ItemCompra.objects.aggregate(
+        total=Sum('quantidade'))['total'] or 0
     valor_total_estoque = ItemCompra.objects.aggregate(
         total=Sum(F('quantidade') * F('valor_unitario'),
                   output_field=FloatField())
     )['total'] or 0
     compras = Compra.objects.filter(comprador__user=request.user)
-    estoques = Estoque.objects.select_related(
-        'lote', 'local', 'lote__item_compra', 'lote__item_compra__produto')
+    estoques = Estoque.objects.prefetch_related('locais', 'compras')
     fornecedores = Fornecedor.objects.all()
 
     contexto = {
@@ -46,16 +50,16 @@ def admin_painel(request):
 
     produtos = Produto.objects.all()
     total_produtos = produtos.count()
-    total_estoque = Estoque.objects.aggregate(
-        total=Sum('lote__item_compra__quantidade'))['total'] or 0
+    total_estoque = ItemCompra.objects.aggregate(
+        total=Sum('quantidade'))['total'] or 0
     valor_total_estoque = ItemCompra.objects.aggregate(
         total=Sum(F('quantidade') * F('valor_unitario'),
                   output_field=FloatField())
     )['total'] or 0
     compras = Compra.objects.all()
-    estoques = Estoque.objects.select_related(
-        'lote', 'local', 'lote__item_compra', 'lote__item_compra__produto')
+    estoques = Estoque.objects.prefetch_related('locais', 'compras')
     fornecedores = Fornecedor.objects.all()
+    movimentacoes = ItemCompra.objects.select_related('produto', 'local', 'compra', 'compra__estoque').order_by('-id')[:5]
 
     contexto = {
         'sidebar_links': get_sidebar_links(request.user),
@@ -66,22 +70,88 @@ def admin_painel(request):
         'compras': compras,
         'estoques': estoques,
         'fornecedores': fornecedores,
+        'movimentacoes': movimentacoes,
     }
     return render(request, 'pages/admin/painel.html', contexto)
 
-    # TODO: Adicionar URLs correspondentes para os painéis de administrador e usuário aqui.
+
+def admin_usuarios_list(request):
+    if not request.user.is_authenticated or getattr(request.user.profile, 'role', None) != 'ADMIN':
+        return redirect('login')
+
+    # Adição de usuário
+    if request.method == 'POST' and 'add-usuario' in request.POST:
+        username = request.POST.get('add-username')
+        email = request.POST.get('add-email')
+        role = request.POST.get('add-role')
+        password = request.POST.get('add-password')
+        if username and email and role and password:
+            if not User.objects.filter(username=username).exists():
+                try:
+                    with transaction.atomic():
+                        user = User.objects.create_user(username=username, email=email, password=password)
+                        # Profile é criado automaticamente pelo signal
+                        user.profile.role = role
+                        user.profile.save()
+                    messages.success(request, 'Usuário cadastrado com sucesso!')
+                except Exception as e:
+                    messages.error(request, 'Erro ao cadastrar usuário: ' + str(e))
+            else:
+                messages.error(request, 'Nome de usuário já existe.')
+        else:
+            messages.error(request, 'Preencha todos os campos para cadastrar um usuário.')
+        return redirect('admin_usuarios_list')
+
+    # Edição de usuário
+    if request.method == 'POST' and 'username' in request.POST and 'email' in request.POST and 'role' in request.POST:
+        user_id = request.POST.get('user_id')
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        role = request.POST.get('role')
+        try:
+            user = User.objects.get(id=user_id)
+            user.username = username
+            user.email = email
+            user.save()
+            profile = user.profile
+            profile.role = role
+            profile.save()
+            messages.success(request, 'Usuário editado com sucesso!')
+        except User.DoesNotExist:
+            messages.error(request, 'Usuário não encontrado.')
+        return redirect('admin_usuarios_list')
+    # Exclusão de usuário
+    if request.method == 'POST' and 'user_id' in request.POST and 'delete-user-id' in request.POST:
+        user_id = request.POST.get('user_id')
+        try:
+            user = User.objects.get(id=user_id)
+            user.delete()
+            messages.success(request, 'Usuário excluído com sucesso!')
+        except User.DoesNotExist:
+            messages.error(request, 'Usuário não encontrado.')
+        return redirect('admin_usuarios_list')
+
+    usuarios = User.objects.select_related('profile').all().order_by('id')
+    paginator = Paginator(usuarios, 10)  # 10 usuários por página
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    contexto = {
+        'sidebar_links': get_sidebar_links(request.user),
+        'usuarios': page_obj,
+    }
+    return render(request, 'pages/admin/usuarios_list.html', contexto)
 
 
 def get_sidebar_links(user):
     role = getattr(user.profile, 'role', None)
     if role == 'ADMIN':
         return [
-            {'url': '', 'label': 'Painel Administrador'},
-            {'url': '', 'label': 'Gerenciar Usuários'},
+            {'url': '/administrador/painel/', 'label': 'Painel Administrador'},
+            {'url': '/administrador/usuarios/', 'label': 'Gerenciar Usuários'},
         ]
     elif role == 'USUARIO':
         return [
-            {'url': '', 'label': 'Dashboard'},
-            {'url': '', 'label': 'Perfil'},
+            {'url': '/usuario/painel/', 'label': 'Dashboard'},
+            {'url': '/usuario/perfil/', 'label': 'Perfil'},
         ]
     return []

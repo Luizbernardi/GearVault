@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gerenciar Usuários{% endblock %}
+
+{% block content %}
+<div class="container-fluid" id="main-content-panel">
+  <div class="row">
+    <div class="col-md-2" id="sidebar-panel">
+      {% include 'sidebar.html' %}
+    </div>
+    <div class="col-md-10 mt-4" id="painel-content">
+      <div class="card" style="border: 1px solid #083D77;">
+        <div class="card-header text-white" style="background-color: #083D77;">
+          <h4 class="mb-0">Gerenciamento de Usuários</h4>
+        </div>
+        <div class="card-body">
+          {% if messages %}
+            <div aria-live="polite" aria-atomic="true" class="position-relative">
+              <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+                {% for message in messages %}
+                  <div class="toast align-items-center text-bg-{{ message.tags }} border-0 show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
+                    <div class="d-flex">
+                      <div class="toast-body">
+                        {{ message }}
+                      </div>
+                      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                var toastElList = [].slice.call(document.querySelectorAll('.toast'));
+                toastElList.forEach(function (toastEl) {
+                  var toast = new bootstrap.Toast(toastEl, { delay: 5000 });
+                  toast.show();
+                });
+              });
+            </script>
+          {% endif %}
+          <!-- Botão para abrir modal de cadastro -->
+          <div class="d-flex justify-content-end mb-3">
+            <button class="btn text-white" style="background-color: #083D77;" data-bs-toggle="modal" data-bs-target="#adicionarUsuarioModal">
+              Cadastrar Usuário
+            </button>
+          </div>
+          <table class="table table-striped table-bordered mt-3">
+            <thead>
+              <tr>
+                <th>Usuário</th>
+                <th>Email</th>
+                <th>Perfil</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for usuario in usuarios %}
+              <tr>
+                <td>{{ usuario.username }}</td>
+                <td>{{ usuario.email }}</td>
+                <td>{{ usuario.profile.get_role_display }}</td>
+                <td>
+                  <button class="btn btn-sm rounded-circle me-2 d-inline-flex align-items-center text-white justify-content-center" style="width: 36px; height: 36px; background-color: #083D77;" data-bs-toggle="modal" data-bs-target="#editarUsuarioModal" data-user-id="{{ usuario.id }}" data-username="{{ usuario.username }}" data-email="{{ usuario.email }}" data-role="{{ usuario.profile.role }}" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button class="btn btn-sm rounded-circle d-inline-flex align-items-center justify-content-center text-white" style="width: 36px; height: 36px; background-color: #c5172e;" data-bs-toggle="modal" data-bs-target="#excluirUsuarioModal" data-user-id="{{ usuario.id }}" data-username="{{ usuario.username }}" title="Excluir">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5">Nenhum usuário encontrado.</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+          <nav aria-label="Navegação de página" class="d-flex justify-content-center">
+            <ul class="pagination">
+              {% if usuarios.number > 1 %}
+                <li class="page-item"><a class="page-link" href="?page=1">« Primeira</a></li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">« Primeira</span></li>
+              {% endif %}
+              {% if usuarios.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ usuarios.previous_page_number }}">Anterior</a></li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+              {% endif %}
+              <li class="page-item disabled">
+                <span class="page-link text-white" style="background-color: #083D77; border-color: #083D77;">
+                  Página {{ usuarios.number }} de {{ usuarios.paginator.num_pages }}
+                </span>
+              </li>
+              {% if usuarios.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ usuarios.next_page_number }}">Próxima</a></li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">Próxima</span></li>
+              {% endif %}
+              {% if usuarios.number < usuarios.paginator.num_pages %}
+                <li class="page-item"><a class="page-link" href="?page={{ usuarios.paginator.num_pages }}">Última »</a></li>
+              {% else %}
+                <li class="page-item disabled"><span class="page-link">Última »</span></li>
+              {% endif %}
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Modal Editar Usuário -->
+<div class="modal fade" id="editarUsuarioModal" tabindex="-1" aria-labelledby="editarUsuarioModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background-color: #083D77;">
+        <h5 class="modal-title text-white" id="editarUsuarioModalLabel">Editar Usuário</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" id="formEditarUsuario">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row">
+            <input type='hidden' name='user_id' id='edit-user-id'>
+            <div class="col-12 mb-3">
+              <label for="edit-username" class="form-label">Usuário</label>
+              <input type="text" class="form-control" name="username" id="edit-username" required>
+            </div>
+            <div class="col-12 mb-3">
+              <label for="edit-email" class="form-label">Email</label>
+              <input type="email" class="form-control" name="email" id="edit-email" required>
+            </div>
+            <div class="col-12 mb-3">
+              <label for="edit-role" class="form-label">Perfil</label>
+              <select class="form-select" name="role" id="edit-role" required>
+                <option value="ADMIN">Administrador</option>
+                <option value="USUARIO">Usuário</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Modal Excluir Usuário -->
+<div class="modal fade" id="excluirUsuarioModal" tabindex="-1" aria-labelledby="excluirUsuarioModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background-color: #083D77;">
+        <h5 class="modal-title text-white" id="excluirUsuarioModalLabel">Excluir Usuário</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" id="formExcluirUsuario">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row">
+            <input type="hidden" name="user_id" id="delete-user-id">
+            <input type="hidden" name="delete-user-id" value="1">
+            <div class="col-12 mb-3">
+              <p>Tem certeza que deseja excluir o usuário <strong id="delete-username"></strong>?</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger">Excluir</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Modal Adicionar Usuário ocupando largura do card -->
+<div class="modal fade" id="adicionarUsuarioModal" tabindex="-1" aria-labelledby="adicionarUsuarioModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background-color: #083D77;">
+        <h5 class="modal-title text-white" id="adicionarUsuarioModalLabel">Cadastrar Usuário</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" id="formAdicionarUsuario">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="add-username" class="form-label">Usuário</label>
+              <input type="text" class="form-control" name="add-username" id="add-username" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="add-email" class="form-label">Email</label>
+              <input type="email" class="form-control" name="add-email" id="add-email" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="add-role" class="form-label">Perfil</label>
+              <select class="form-select" name="add-role" id="add-role" required>
+                <option value="ADMIN">Admin</option>
+                <option value="USUARIO">Usuário</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="add-password" class="form-label">Senha</label>
+              <input type="password" class="form-control" name="add-password" id="add-password" required>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn text-white" style="background-color: #083D77;" name="add-usuario">Cadastrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<style>
+  #painel-content {
+    transition: width 0.3s cubic-bezier(0.4,0,0.2,1), margin-left 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  #sidebar-panel {
+    transition: width 0.3s cubic-bezier(0.4,0,0.2,1), display 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+</style>
+<script src="{% static 'painel-content-resize.js' %}"></script>
+<script src="{% static 'modal-usuario.js' %}"></script>
+{% endblock %}
