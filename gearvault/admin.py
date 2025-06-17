@@ -52,12 +52,12 @@ class EstoqueAdmin(admin.ModelAdmin):
     list_filter = ("local",)
     search_fields = ("lote__item_compra__produto__nome",)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "lote":
-            from .models import Estoque, LoteEstoque
-            usados = Estoque.objects.values_list("lote_id", flat=True)
-            kwargs["queryset"] = LoteEstoque.objects.exclude(id__in=usados)
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+    # def formfield_for_foreignkey(self, db_field, request, **kwargs):
+    #     if db_field.name == "lote":
+    #         from .models import Estoque, LoteEstoque
+    #         usados = Estoque.objects.values_list("lote_id", flat=True)
+    #         kwargs["queryset"] = LoteEstoque.objects.exclude(id__in=usados)
+    #     return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def lote_display(self, obj):
         return f"Lote {obj.lote.id}" if obj.lote else "-"
@@ -80,12 +80,12 @@ class LoteEstoqueAdmin(admin.ModelAdmin):
     search_fields = ("estoque__produto__nome", "item_compra__produto__nome", "item_compra__compra__id")
     list_filter = ("estoque__local",)
 
-    def formfield_for_foreignkey(self, db_field, request, **kwargs):
-        if db_field.name == "item_compra":
-            from .models import LoteEstoque, ItemCompra
-            usados = LoteEstoque.objects.values_list("item_compra_id", flat=True)
-            kwargs["queryset"] = ItemCompra.objects.exclude(id__in=usados)
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+    # def formfield_for_foreignkey(self, db_field, request, **kwargs):
+    #     if db_field.name == "item_compra":
+    #         from .models import LoteEstoque, ItemCompra
+    #         usados = LoteEstoque.objects.values_list("item_compra_id", flat=True)
+    #         kwargs["queryset"] = ItemCompra.objects.exclude(id__in=usados)
+    #     return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
     def compra_id(self, obj):
         return obj.item_compra.compra.id

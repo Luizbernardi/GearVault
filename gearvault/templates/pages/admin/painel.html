@@ -1,47 +1,43 @@
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}
-Painel Admin
+GearVault
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid" id="main-content-panel">
   <div class="row">
-    <div class="col-md-2">
+    <div class="col-md-2" id="sidebar-panel">
       {% include 'sidebar.html' %}
     </div>
-    <div class="col-md-10 mt-4">
+    <div class="col-md-10 mt-4" id="painel-content">
       <div class="row">
-        <!-- Card: Total de Produtos -->
         <div class="col-md-3 mb-3">
-          <div class="card text-white bg-primary h-100">
+          <div class="card text-white h-100" style="background-color: #083D77;">
             <div class="card-body">
               <h5 class="card-title">Produtos Cadastrados</h5>
               <p class="card-text display-6">{{ total_produtos }}</p>
             </div>
           </div>
         </div>
-        <!-- Card: Total em Estoque -->
         <div class="col-md-3 mb-3">
-          <div class="card text-white bg-success h-100">
-            <div class="card-body">
+          <div class="card text-white h-100" style="background-color: #083D77;">
+            <div class="card-body"> 
               <h5 class="card-title">Total em Estoque</h5>
               <p class="card-text display-6">{{ total_estoque }}</p>
             </div>
           </div>
         </div>
-        <!-- Card: Valor Total do Estoque -->
         <div class="col-md-3 mb-3">
-          <div class="card text-white bg-info h-100">
+          <div class="card text-white h-100" style="background-color: #083D77;">
             <div class="card-body">
               <h5 class="card-title">Valor Total do Estoque</h5>
               <p class="card-text display-6">R$ {{ valor_total_estoque|floatformat:2 }}</p>
             </div>
           </div>
         </div>
-        <!-- Card: Fornecedores -->
         <div class="col-md-3 mb-3">
-          <div class="card text-white bg-warning h-100">
+          <div class="card text-white h-100" style="background-color: #083D77;">
             <div class="card-body">
               <h5 class="card-title">Fornecedores</h5>
               <p class="card-text display-6">{{ fornecedores|length }}</p>
@@ -49,129 +45,97 @@ Painel Admin
           </div>
         </div>
       </div>
-      <!-- Listagem de Produtos -->
       <div class="row mt-4">
-        <div class="col-12">
-          <h4>Produtos Cadastrados</h4>
-          <table class="table table-bordered">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Código</th>
-                <th>Fornecedor</th>
-                <th>Descrição</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for produto in produtos %}
-              <tr>
-                <td>{{ produto.nome }}</td>
-                <td>{{ produto.codigo }}</td>
-                <td>{% if produto.fornecedor %}{{ produto.fornecedor.nome }}{% else %}-{% endif %}</td>
-                <td>{{ produto.descricao }}</td>
-              </tr>
+        <div class="col-md-4 mb-4">
+          <div class="card h-100" style="border: 1px solid #083D77;">
+            <div class="card-header text-white" style="background-color: #083D77;">Produtos Recentes</div>
+            <ul class="list-group list-group-flush">
+              {% for produto in produtos|slice:':5' %}
+              <li class="list-group-item">
+                <strong>{{ produto.nome }}</strong><br>
+                Código: {{ produto.codigo }}<br>
+                Fornecedor: {% if produto.fornecedor %}{{ produto.fornecedor.nome }}{% else %}-{% endif %}
+              </li>
               {% empty %}
-              <tr>
-                <td colspan="4">Nenhum produto cadastrado.</td>
-              </tr>
+              <li class="list-group-item">Nenhum produto cadastrado.</li>
               {% endfor %}
-            </tbody>
-          </table>
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="card h-100" style="border: 1px solid #083D77;">
+            <div class="card-header text-white" style="background-color: #083D77;">Últimas Compras</div>
+            <ul class="list-group list-group-flush">
+              {% for compra in compras|slice:':5' %}
+              <li class="list-group-item">
+                <strong>ID:</strong> {{ compra.id }}<br>
+                <strong>Data:</strong> {{ compra.data }}<br>
+                <strong>Fornecedor:</strong> {{ compra.fornecedor.nome }}<br>
+                <strong>Valor:</strong> R$ {{ compra.valor_total|floatformat:2 }}
+              </li>
+              {% empty %}
+              <li class="list-group-item">Nenhuma compra cadastrada.</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-4 mb-4">
+          <div class="card h-100" style="border: 1px solid #083D77;">
+            <div class="card-header text-white" style="background-color: #083D77;">Transações Recentes</div>
+            <ul class="list-group list-group-flush">
+              {% for estoque in estoques|slice:':5' %}
+              <li class="list-group-item">
+                <strong>Produto:</strong> {{ estoque.lote.item_compra.produto.nome }}<br>
+                <strong>Lote:</strong> {{ estoque.lote.id }}<br>
+                <strong>Local:</strong> {{ estoque.local.nome }}<br>
+                <strong>Quantidade:</strong> {{ estoque.quantidade }}
+              </li>
+              {% empty %}
+              <li class="list-group-item">Nenhum estoque cadastrado.</li>
+              {% endfor %}
+            </ul>
+          </div>
         </div>
       </div>
-      <!-- Listagem de Compras -->
-      <div class="row mt-4">
-        <div class="col-12">
-          <h4>Compras</h4>
-          <table class="table table-striped">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Data</th>
-                <th>Fornecedor</th>
-                <th>Valor Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for compra in compras %}
-              <tr>
-                <td>{{ compra.id }}</td>
-                <td>{{ compra.data }}</td>
-                <td>{{ compra.fornecedor.nome }}</td>
-                <td>R$ {{ compra.valor_total|floatformat:2 }}</td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="4">Nenhuma compra cadastrada.</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <!-- Listagem de Estoques -->
-      <div class="row mt-4">
-        <div class="col-12">
-          <h4>Estoques</h4>
-          <table class="table table-hover">
-            <thead>
-              <tr>
-                <th>Produto</th>
-                <th>Lote</th>
-                <th>Local</th>
-                <th>Quantidade</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for estoque in estoques %}
-              <tr>
-                <td>{{ estoque.lote.item_compra.produto.nome }}</td>
-                <td>{{ estoque.lote.id }}</td>
-                <td>{{ estoque.local.nome }}</td>
-                <td>{{ estoque.quantidade }}</td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="4">Nenhum estoque cadastrado.</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <!-- Listagem de Fornecedores -->
-      <div class="row mt-4">
-        <div class="col-12">
-          <h4>Fornecedores</h4>
-          <table class="table table-bordered">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>CNPJ</th>
-                <th>Email</th>
-                <th>Telefone</th>
-                <th>Endereço</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for fornecedor in fornecedores %}
-              <tr>
-                <td>{{ fornecedor.nome }}</td>
-                <td>{{ fornecedor.cnpj }}</td>
-                <td>{{ fornecedor.email }}</td>
-                <td>{{ fornecedor.telefone }}</td>
-                <td>{{ fornecedor.endereco }}</td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="5">Nenhum fornecedor cadastrado.</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+      <div class="row mt-4 ">
+        <div class="col-md-12">
+          <div class="card mb-5" style="border: 1px solid #083D77;" >
+            <div class="card-header text-white" style="background-color: #083D77;">Fornecedores</div>
+            <div class="card-body">
+              <div class="row">
+                {% for fornecedor in fornecedores|slice:':4' %}
+                <div class="col-md-3 mb-3">
+                  <div class="card h-100 border-secondary">
+                    <div class="card-body">
+                      <h6 class="card-title">{{ fornecedor.nome }}</h6>
+                      <p class="card-text">
+                        <strong>CNPJ:</strong> {{ fornecedor.cnpj }}<br>
+                        <strong>Email:</strong> {{ fornecedor.email }}<br>
+                        <strong>Telefone:</strong> {{ fornecedor.telefone }}<br>
+                        <strong>Endereço:</strong> {{ fornecedor.endereco }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                {% empty %}
+                <div class="col-12">Nenhum fornecedor cadastrado.</div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
+<style>
+  #painel-content {
+    transition: width 0.3s cubic-bezier(0.4,0,0.2,1), margin-left 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  #sidebar-panel {
+    transition: width 0.3s cubic-bezier(0.4,0,0.2,1), display 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+</style>
+
+<script src="{% static 'painel-content-resize.js' %}"></script>
 {% endblock %}
