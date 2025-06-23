@@ -41,27 +41,27 @@
             </script>
           {% endif %}
           <!-- Botão para abrir modal de cadastro -->
-          <div class="d-flex justify-content-end mb-3">
-            <button class="btn text-white" style="background-color: #083D77;" data-bs-toggle="modal" data-bs-target="#adicionarUsuarioModal">
+          <div class="d-flex justify-content-end mt-1">
+            <button class="btn text-white" style="width: 300px; height: 50px; background-color: #083D77;" data-bs-toggle="modal" data-bs-target="#adicionarUsuarioModal">
               Cadastrar Usuário
             </button>
           </div>
-          <table class="table table-striped table-bordered mt-3">
+          <table class="table table-striped table-bordered mt-4">
             <thead>
               <tr>
-                <th>Usuário</th>
-                <th>Email</th>
-                <th>Perfil</th>
-                <th></th>
+                <th class="py-3">Usuário</th>
+                <th class="py-3">Email</th>
+                <th class="py-3">Perfil</th>
+                <th class="py-3"></th>
               </tr>
             </thead>
             <tbody>
             {% for usuario in usuarios %}
               <tr>
-                <td>{{ usuario.username }}</td>
-                <td>{{ usuario.email }}</td>
-                <td>{{ usuario.profile.get_role_display }}</td>
-                <td>
+                <td class="py-2">{{ usuario.username }}</td>
+                <td class="py-2">{{ usuario.email }}</td>
+                <td class="py-2">{{ usuario.profile.get_role_display }}</td>
+                <td class="py-2">
                   <button class="btn btn-sm rounded-circle me-2 d-inline-flex align-items-center text-white justify-content-center" style="width: 36px; height: 36px; background-color: #083D77;" data-bs-toggle="modal" data-bs-target="#editarUsuarioModal" data-user-id="{{ usuario.id }}" data-username="{{ usuario.username }}" data-email="{{ usuario.email }}" data-role="{{ usuario.profile.role }}" title="Editar">
                     <i class="bi bi-pencil"></i>
                   </button>
@@ -75,7 +75,7 @@
             {% endfor %}
             </tbody>
           </table>
-          <div class="d-flex justify-content-center align-items-center mb-3">
+          <div class="d-flex justify-content-center align-items-center mb-3 mt-5">
             <nav aria-label="Navegação de página" class="d-flex justify-content-center mb-0">
               <ul class="pagination mb-0">
                 {% if usuarios.number > 1 %}
