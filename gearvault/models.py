@@ -115,3 +115,42 @@ class ItemCompra(models.Model):
         managed = True
         verbose_name = 'Item da Compra'
         verbose_name_plural = 'Itens da Compra'
+
+# Solicitação de Produto
+
+
+class SolicitacaoProduto(models.Model):
+    STATUS_CHOICES = [
+        ('PENDENTE', 'Pendente'),
+        ('APROVADA', 'Aprovada'),
+        ('REJEITADA', 'Rejeitada'),
+    ]
+
+    usuario = models.ForeignKey(
+        get_user_model(), on_delete=models.CASCADE, related_name='solicitacoes')
+    produto = models.ForeignKey(Produto, on_delete=models.CASCADE)
+    local = models.ForeignKey(LocalArmazenamento, on_delete=models.CASCADE)
+    quantidade = models.PositiveIntegerField()
+    justificativa = models.TextField(
+        help_text="Justificativa para a solicitação")
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES, default='PENDENTE')
+    data_solicitacao = models.DateTimeField(auto_now_add=True)
+    data_resposta = models.DateTimeField(null=True, blank=True)
+    resposta_admin = models.TextField(
+        blank=True, null=True, help_text="Resposta do administrador")
+    admin_responsavel = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='solicitacoes_processadas'
+    )
+
+    class Meta:
+        ordering = ['-data_solicitacao']
+        verbose_name = 'Solicitação de Produto'
+        verbose_name_plural = 'Solicitações de Produtos'
+
+    def __str__(self):
+        return f"Solicitação #{self.id} - {self.produto.nome} ({self.quantidade}) - {self.status}"

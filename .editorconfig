@@ -1,0 +1,31 @@
+# Configurações específicas para o projeto Django GearVault
+
+# Configurações do EditorConfig para manter consistência
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+[*.{html,htm}]
+indent_size = 4
+max_line_length = 120
+# Não quebrar linhas automaticamente em templates Django
+ij_html_do_not_indent_children_of = html,body,thead,tbody,tfoot,script,style
+ij_html_keep_blank_lines_in_text = 1
+ij_html_keep_line_breaks = true
+ij_html_keep_line_breaks_in_text = true
+ij_html_keep_whitespaces = true
+ij_html_keep_whitespaces_inside = true
+
+[*.{js,css}]
+indent_size = 2
+max_line_length = 100
+
+[*.py]
+indent_size = 4
+max_line_length = 88

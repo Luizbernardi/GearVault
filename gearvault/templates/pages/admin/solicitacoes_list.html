@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Solicitações de Produtos{% endblock %}
+
+{% block content %}
+<div class="container-fluid" id="main-content-panel">
+  <div class="row">
+    <div class="col-md-2" id="sidebar-panel">
+      {% include 'sidebar.html' %}
+    </div>
+    <div class="col-md-10" id="painel-content">
+      <div class="card mt-4 mb-4" style="border: 1px solid #083D77;">
+        <div class="card-header text-white" style="background-color: #083D77;">
+          <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0"><i class="bi bi-clipboard-check"></i> Solicitações de Produtos</h4>
+            <div class="d-flex gap-2">
+              <form method="get" class="d-flex align-items-center">
+                <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                  <option value="PENDENTE" {% if status_filter == 'PENDENTE' %}selected{% endif %}>Pendentes</option>
+                  <option value="APROVADA" {% if status_filter == 'APROVADA' %}selected{% endif %}>Aprovadas</option>
+                  <option value="REJEITADA" {% if status_filter == 'REJEITADA' %}selected{% endif %}>Rejeitadas</option>
+                  <option value="TODAS" {% if status_filter == 'TODAS' %}selected{% endif %}>Todas</option>
+                </select>
+              </form>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          {% if solicitacoes %}
+            <div class="table-responsive">
+              <table class="table table-striped table-bordered">
+                <thead>
+                  <tr>
+                    <th class="py-3 px-3">Data</th>
+                    <th class="py-3 px-3">Usuário</th>
+                    <th class="py-3 px-3">Produto</th>
+                    <th class="py-3 px-3">Local</th>
+                    <th class="py-3 px-3">Quantidade</th>
+                    <th class="py-3 px-3">Status</th>
+                    <th class="py-3 px-3">Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for solicitacao in solicitacoes %}
+                    <tr {% if solicitacao.status == 'PENDENTE' %}class="table-warning"{% endif %}>
+                      <td class="py-2">{{ solicitacao.data_solicitacao|date:"d/m/Y H:i" }}</td>
+                      <td class="py-2">
+                        <strong>{{ solicitacao.usuario.get_full_name|default:solicitacao.usuario.username }}</strong><br>
+                        <small class="text-muted">{{ solicitacao.usuario.email }}</small>
+                      </td>
+                      <td class="py-2">
+                        <strong>{{ solicitacao.produto.nome }}</strong><br>
+                        <small class="text-muted">{{ solicitacao.produto.codigo }}</small>
+                      </td>
+                      <td class="py-2">
+                        {{ solicitacao.local.nome }}<br>
+                        <small class="text-muted">{{ solicitacao.local.estoque.nome }}</small>
+                      </td>
+                      <td class="py-2">
+                        <span class="badge bg-info">{{ solicitacao.quantidade }}</span>
+                      </td>
+                      <td class="py-2">
+                        {% if solicitacao.status == 'PENDENTE' %}
+                          <span class="badge bg-warning">
+                            <i class="bi bi-clock"></i> Pendente
+                          </span>
+                        {% elif solicitacao.status == 'APROVADA' %}
+                          <span class="badge bg-success">
+                            <i class="bi bi-check-circle"></i> Aprovada
+                          </span>
+                        {% elif solicitacao.status == 'REJEITADA' %}
+                          <span class="badge bg-danger">
+                            <i class="bi bi-x-circle"></i> Rejeitada
+                          </span>
+                        {% endif %}
+                        {% if solicitacao.data_resposta %}
+                          <br><small class="text-muted">{{ solicitacao.data_resposta|date:"d/m/Y H:i" }}</small>
+                        {% endif %}
+                      </td>
+                      <td class="py-2">
+                        <div class="d-flex gap-1">
+                          <button class="btn btn-sm btn-outline-info" 
+                                  data-bs-toggle="modal" 
+                                  data-bs-target="#detalhesSolicitacaoModal"
+                                  data-solicitacao-id="{{ solicitacao.id }}"
+                                  data-usuario="{{ solicitacao.usuario.get_full_name|default:solicitacao.usuario.username }}"
+                                  data-email="{{ solicitacao.usuario.email }}"
+                                  data-produto="{{ solicitacao.produto.nome }}"
+                                  data-codigo="{{ solicitacao.produto.codigo }}"
+                                  data-local="{{ solicitacao.local.nome }}"
+                                  data-estoque="{{ solicitacao.local.estoque.nome }}"
+                                  data-quantidade="{{ solicitacao.quantidade }}"
+                                  data-justificativa="{{ solicitacao.justificativa }}"
+                                  data-status="{{ solicitacao.get_status_display }}"
+                                  data-data-solicitacao="{{ solicitacao.data_solicitacao|date:'d/m/Y H:i' }}"
+                                  title="Ver Detalhes">
+                            <i class="bi bi-eye"></i>
+                          </button>
+                          {% if solicitacao.status == 'PENDENTE' %}
+                            <a href="{% url 'admin_processar_solicitacao' solicitacao.id %}" 
+                               class="btn btn-sm btn-success"
+                               title="Processar Solicitação">
+                              <i class="bi bi-gear"></i>
+                            </a>
+                          {% endif %}
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Paginação -->
+            <div class="d-flex justify-content-center align-items-center mb-3 mt-5">
+              <nav aria-label="Navegação de página" class="d-flex justify-content-center mb-0">
+                <ul class="pagination mb-0">
+                  {% if solicitacoes.number > 1 %}
+                    <li class="page-item"><a class="page-link" href="?page=1&status={{ status_filter }}">« Primeira</a></li>
+                  {% else %}
+                    <li class="page-item disabled"><span class="page-link">« Primeira</span></li>
+                  {% endif %}
+                  {% if solicitacoes.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page={{ solicitacoes.previous_page_number }}&status={{ status_filter }}">Anterior</a></li>
+                  {% else %}
+                    <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+                  {% endif %}
+                  <li class="page-item disabled">
+                    <span class="page-link text-white" style="background-color: #083D77; border-color: #083D77;">
+                      Página {{ solicitacoes.number }} de {{ solicitacoes.paginator.num_pages }}
+                    </span>
+                  </li>
+                  {% if solicitacoes.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ solicitacoes.next_page_number }}&status={{ status_filter }}">Próxima</a></li>
+                  {% else %}
+                    <li class="page-item disabled"><span class="page-link">Próxima</span></li>
+                  {% endif %}
+                  {% if solicitacoes.number < solicitacoes.paginator.num_pages %}
+                    <li class="page-item"><a class="page-link" href="?page={{ solicitacoes.paginator.num_pages }}&status={{ status_filter }}">Última »</a></li>
+                  {% else %}
+                    <li class="page-item disabled"><span class="page-link">Última »</span></li>
+                  {% endif %}
+                </ul>
+              </nav>
+            </div>
+          {% else %}
+            <div class="text-center py-5">
+              <i class="bi bi-inbox display-1 text-muted"></i>
+              <p class="text-muted mt-3">Nenhuma solicitação encontrada para o filtro selecionado.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalhes da Solicitação -->
+<div class="modal fade" id="detalhesSolicitacaoModal" tabindex="-1" aria-labelledby="detalhesSolicitacaoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background-color: #083D77;">
+        <h5 class="modal-title text-white" id="detalhesSolicitacaoModalLabel">Detalhes da Solicitação</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <h6><strong>Solicitante:</strong></h6>
+            <p id="modal-usuario" class="mb-0"></p>
+            <small id="modal-email" class="text-muted"></small>
+          </div>
+          <div class="col-md-6 mb-3">
+            <h6><strong>Data da Solicitação:</strong></h6>
+            <p id="modal-data-solicitacao" class="mb-0"></p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <h6><strong>Produto:</strong></h6>
+            <p id="modal-produto" class="mb-0"></p>
+            <small id="modal-codigo" class="text-muted"></small>
+          </div>
+          <div class="col-md-6 mb-3">
+            <h6><strong>Local:</strong></h6>
+            <p id="modal-local" class="mb-0"></p>
+            <small id="modal-estoque" class="text-muted"></small>
+          </div>
+          <div class="col-md-6 mb-3">
+            <h6><strong>Quantidade:</strong></h6>
+            <span id="modal-quantidade" class="badge bg-info fs-6"></span>
+          </div>
+          <div class="col-md-6 mb-3">
+            <h6><strong>Status:</strong></h6>
+            <span id="modal-status" class="badge fs-6"></span>
+          </div>
+          <div class="col-12 mb-3">
+            <h6><strong>Justificativa:</strong></h6>
+            <p id="modal-justificativa" class="text-muted"></p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #painel-content {
+    transition: width 0.3s cubic-bezier(0.4,0,0.2,1), margin-left 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  #sidebar-panel {
+    transition: width 0.3s cubic-bezier(0.4,0,0.2,1), display 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+</style>
+<script src="{% static 'painel-content-resize.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('detalhesSolicitacaoModal');
+  
+  modal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+    
+    document.getElementById('modal-usuario').textContent = button.getAttribute('data-usuario');
+    document.getElementById('modal-email').textContent = button.getAttribute('data-email');
+    document.getElementById('modal-produto').textContent = button.getAttribute('data-produto');
+    document.getElementById('modal-codigo').textContent = button.getAttribute('data-codigo');
+    document.getElementById('modal-local').textContent = button.getAttribute('data-local');
+    document.getElementById('modal-estoque').textContent = button.getAttribute('data-estoque');
+    document.getElementById('modal-quantidade').textContent = button.getAttribute('data-quantidade');
+    document.getElementById('modal-justificativa').textContent = button.getAttribute('data-justificativa');
+    document.getElementById('modal-data-solicitacao').textContent = button.getAttribute('data-data-solicitacao');
+    
+    const status = button.getAttribute('data-status');
+    const statusBadge = document.getElementById('modal-status');
+    statusBadge.textContent = status;
+    
+    // Configurar cor do badge baseado no status
+    statusBadge.className = 'badge fs-6';
+    if (status === 'Pendente') {
+      statusBadge.classList.add('bg-warning');
+    } else if (status === 'Aprovada') {
+      statusBadge.classList.add('bg-success');
+    } else if (status === 'Rejeitada') {
+      statusBadge.classList.add('bg-danger');
+    }
+  });
+});
+</script>
+{% endblock %}
