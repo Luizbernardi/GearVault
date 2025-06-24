@@ -24,22 +24,8 @@
                             <h5 class="card-title">{{ user.get_full_name|default:user.username }}</h5>
                             <p class="card-text mb-1"><strong>Usuário:</strong> {{ user.username }}</p>
                             <p class="card-text mb-1"><strong>Email:</strong> {{ user.email }}</p>
-                            {% if user.profile %}
-                            <p class="card-text mb-1"><strong>Função:</strong> {{ user.profile.role|title }}</p>
-                            <p class="card-text mb-1"><strong>Departamento:</strong> {{
-                                user.profile.departamento|default:'-' }}</p>
-                            {% endif %}
-                            <p class="card-text mb-1"><strong>Último login:</strong> {{ user.last_login|date:'d/m/Y H:i'
-                                }}</p>
-                            <p class="card-text mb-1"><strong>Data de cadastro:</strong> {{
-                                user.date_joined|date:'d/m/Y' }}</p>
                         </div>
                     </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-12 text-end">
-                    <a href="{% url 'logout' %}" class="btn btn-danger">Sair</a>
                 </div>
             </div>
         </div>

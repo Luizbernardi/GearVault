@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Adicionar Endereço | GearVault{% endblock %}
+
+{% block content %}
+<div class="container-fluid" id="main-content-panel">
+  <div class="row">
+    <div class="col-md-2" id="sidebar-panel">
+      {% include 'sidebar.html' %}
+    </div>
+    <div class="col-md-10 mt-4" id="painel-content">
+      <div class="row justify-content-center">
+        <div class="col-md-8">
+          <div class="card" style="border: 1px solid #083D77;">
+            <div class="card-header text-white" style="background-color: #083D77;">
+              <h5 class="mb-0">Adicionar Novo Endereço</h5>
+            </div>
+            <div class="card-body">
+              {% if messages %}
+                {% for message in messages %}
+                  <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+              <form method="post" autocomplete="off">
+                {% csrf_token %}
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="id_logradouro" class="form-label"><strong>Logradouro</strong></label>
+                    <input type="text" class="form-control" id="id_logradouro" name="logradouro" required maxlength="255" placeholder="Rua, Avenida, etc.">
+                  </div>
+                  <div class="col-md-3 mb-3">
+                    <label for="id_numero" class="form-label"><strong>Número</strong></label>
+                    <input type="text" class="form-control" id="id_numero" name="numero" required maxlength="20" placeholder="Número">
+                  </div>
+                  <div class="col-md-3 mb-3">
+                    <label for="id_complemento" class="form-label"><strong>Complemento</strong></label>
+                    <input type="text" class="form-control" id="id_complemento" name="complemento" maxlength="100" placeholder="Apto, sala, etc.">
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="id_bairro" class="form-label"><strong>Bairro</strong></label>
+                    <input type="text" class="form-control" id="id_bairro" name="bairro" required maxlength="100" placeholder="Bairro">
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="id_cidade" class="form-label"><strong>Cidade</strong></label>
+                    <input type="text" class="form-control" id="id_cidade" name="cidade" required maxlength="100" placeholder="Cidade">
+                  </div>
+                  <div class="col-md-2 mb-3">
+                    <label for="id_estado" class="form-label"><strong>UF</strong></label>
+                    <input type="text" class="form-control" id="id_estado" name="estado" required maxlength="2" placeholder="UF">
+                  </div>
+                  <div class="col-md-4 mb-3">
+                    <label for="id_cep" class="form-label"><strong>CEP</strong></label>
+                    <input type="text" class="form-control" id="id_cep" name="cep" required maxlength="8" placeholder="Somente números">
+                  </div>
+                </div>
+                <div class="d-flex justify-content-end">
+                  <button type="submit" class="btn text-white" style="background-color: #083D77;">Salvar Endereço</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+  #painel-content {
+    transition: width 0.3s cubic-bezier(0.4,0,0.2,1), margin-left 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  #sidebar-panel {
+    transition: width 0.3s cubic-bezier(0.4,0,0.2,1), display 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+</style>
+<script src="{% static 'painel-content-resize.js' %}"></script>
+{% endblock %}
