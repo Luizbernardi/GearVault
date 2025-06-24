@@ -162,58 +162,44 @@ def usuario_perfil(request):
     }
     return render(request, 'pages/user/perfil.html', contexto)
 
-
 @login_required
 @require_http_methods(["GET", "POST"])
-def admin_produto_add(request):
+def admin_fornecedor_list(request):
     if request.user.profile.role != 'ADMIN':
         return redirect('login')
-    fornecedores = Fornecedor.objects.all()
-    if request.method == 'POST':
-        nome = request.POST.get('nome')
-        codigo = request.POST.get('codigo')
-        fornecedor_id = request.POST.get('fornecedor')
-        categoria = request.POST.get('categoria')
-        unidade = request.POST.get('unidade')
-        valor_unitario = request.POST.get('valor_unitario')
-        descricao = request.POST.get('descricao')
-        fornecedor = Fornecedor.objects.filter(
-            id=fornecedor_id).first() if fornecedor_id else None
-        if nome and codigo and valor_unitario:
-            try:
-                Produto.objects.create(
-                    nome=nome,
-                    codigo=codigo,
-                    fornecedor=fornecedor,
-                    descricao=descricao,
-                )
-                messages.success(request, 'Produto cadastrado com sucesso!')
-                return redirect('admin_produto_add')
-            except Exception as e:
-                messages.error(request, f'Erro ao cadastrar produto: {str(e)}')
-        else:
-            messages.error(request, 'Preencha os campos obrigatórios.')
-    contexto = {
-        'sidebar_links': get_sidebar_links(request.user),
-        'fornecedores': fornecedores,
-    }
-    return render(request, 'pages/admin/produto_add.html', contexto)
 
-
-@login_required
-@require_http_methods(["GET", "POST"])
-def admin_fornecedor_add(request):
-    if request.user.profile.role != 'ADMIN':
-        return redirect('login')
+    per_page = int(request.GET.get('per_page', 10))
     enderecos = Endereco.objects.all()
-    if request.method == 'POST':
-        nome = request.POST.get('nome')
-        cnpj = request.POST.get('cnpj')
-        email = request.POST.get('email')
-        telefone = request.POST.get('telefone')
-        endereco_id = request.POST.get('endereco')
-        endereco = Endereco.objects.filter(
-            id=endereco_id).first() if endereco_id else None
+
+    # Adição de fornecedor
+    if request.method == 'POST' and 'add-fornecedor' in request.POST:
+        nome = request.POST.get('add-nome')
+        cnpj = request.POST.get('add-cnpj')
+        email = request.POST.get('add-email')
+        telefone = request.POST.get('add-telefone')
+        endereco_id = request.POST.get('add-endereco')
+        # Campos do novo endereço
+        novo_logradouro = request.POST.get('novo-logradouro')
+        novo_numero = request.POST.get('novo-numero')
+        novo_bairro = request.POST.get('novo-bairro')
+        novo_cidade = request.POST.get('novo-cidade')
+        novo_estado = request.POST.get('novo-estado')
+        novo_cep = request.POST.get('novo-cep')
+        novo_complemento = request.POST.get('novo-complemento')
+        endereco = None
+        # Se algum campo de novo endereço foi preenchido, cria o endereço
+        if novo_logradouro and novo_numero and novo_bairro and novo_cidade and novo_estado and novo_cep:
+            endereco = Endereco.objects.create(
+                logradouro=novo_logradouro,
+                numero=novo_numero,
+                bairro=novo_bairro,
+                cidade=novo_cidade,
+                estado=novo_estado,
+                cep=novo_cep,
+                complemento=novo_complemento
+            )
+        elif endereco_id:
+            endereco = Endereco.objects.filter(id=endereco_id).first()
         if nome and cnpj and email and telefone and endereco:
             try:
                 Fornecedor.objects.create(
@@ -224,17 +210,139 @@ def admin_fornecedor_add(request):
                     endereco=endereco
                 )
                 messages.success(request, 'Fornecedor cadastrado com sucesso!')
-                return redirect('admin_fornecedor_add')
             except Exception as e:
-                messages.error(
-                    request, f'Erro ao cadastrar fornecedor: {str(e)}')
+                messages.error(request, f'Erro ao cadastrar fornecedor: {str(e)}')
         else:
             messages.error(request, 'Preencha todos os campos obrigatórios.')
+        return redirect('admin_fornecedor_list')
+
+    # Edição de fornecedor
+    if request.method == 'POST' and 'fornecedor_id' in request.POST and 'nome' in request.POST and 'cnpj' in request.POST and 'email' in request.POST and 'telefone' in request.POST and 'endereco' in request.POST:
+        fornecedor_id = request.POST.get('fornecedor_id')
+        nome = request.POST.get('nome')
+        cnpj = request.POST.get('cnpj')
+        email = request.POST.get('email')
+        telefone = request.POST.get('telefone')
+        endereco_id = request.POST.get('endereco')
+        endereco = Endereco.objects.filter(id=endereco_id).first() if endereco_id else None
+        try:
+            fornecedor = Fornecedor.objects.get(id=fornecedor_id)
+            fornecedor.nome = nome
+            fornecedor.cnpj = cnpj
+            fornecedor.email = email
+            fornecedor.telefone = telefone
+            fornecedor.endereco = endereco
+            fornecedor.save()
+            messages.success(request, 'Fornecedor editado com sucesso!')
+        except Fornecedor.DoesNotExist:
+            messages.error(request, 'Fornecedor não encontrado.')
+        return redirect('admin_fornecedor_list')
+
+    # Exclusão de fornecedor
+    if request.method == 'POST' and 'fornecedor_id' in request.POST and 'delete-fornecedor-id' in request.POST:
+        fornecedor_id = request.POST.get('fornecedor_id')
+        try:
+            fornecedor = Fornecedor.objects.get(id=fornecedor_id)
+            fornecedor.delete()
+            messages.success(request, 'Fornecedor excluído com sucesso!')
+        except Fornecedor.DoesNotExist:
+            messages.error(request, 'Fornecedor não encontrado.')
+        return redirect('admin_fornecedor_list')
+
+    fornecedores = Fornecedor.objects.select_related('endereco').all().order_by('id')
+    paginator = Paginator(fornecedores, per_page)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
     contexto = {
         'sidebar_links': get_sidebar_links(request.user),
+        'fornecedores': page_obj,
         'enderecos': enderecos,
     }
-    return render(request, 'pages/admin/fornecedor_add.html', contexto)
+    return render(request, 'pages/admin/fornecedor_list.html', contexto)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def admin_produto_list(request):
+    if request.user.profile.role != 'ADMIN':
+        return redirect('login')
+
+    per_page = int(request.GET.get('per_page', 10))
+
+    # Adição de produto
+    if request.method == 'POST' and 'add-produto' in request.POST:
+        nome = request.POST.get('add-nome')
+        codigo = request.POST.get('add-codigo')
+        categoria = request.POST.get('add-categoria')
+        preco = request.POST.get('add-preco')
+        imagem = request.FILES.get('add-imagem')
+        descricao = request.POST.get('add-descricao')
+        if nome and codigo and categoria and preco is not None:
+            try:
+                Produto.objects.create(
+                    nome=nome,
+                    codigo=codigo,
+                    categoria=categoria,
+                    preco=preco,
+                    imagem=imagem,
+                    descricao=descricao,
+                )
+                messages.success(request, 'Produto cadastrado com sucesso!')
+            except Exception as e:
+                messages.error(request, f'Erro ao cadastrar produto: {str(e)}')
+        else:
+            messages.error(request, 'Preencha todos os campos obrigatórios.')
+        return redirect('admin_produto_list')
+
+    # Edição de produto
+    if request.method == 'POST' and 'produto_id' in request.POST and 'nome' in request.POST and 'codigo' in request.POST and 'categoria' in request.POST and 'preco' in request.POST:
+        produto_id = request.POST.get('produto_id')
+        nome = request.POST.get('nome')
+        codigo = request.POST.get('codigo')
+        categoria = request.POST.get('categoria')
+        preco = request.POST.get('preco')
+        imagem = request.FILES.get('imagem')
+        descricao = request.POST.get('descricao')
+        fornecedor_id = request.POST.get('fornecedor')
+        fornecedor = Fornecedor.objects.filter(id=fornecedor_id).first() if fornecedor_id else None
+        try:
+            produto = Produto.objects.get(id=produto_id)
+            produto.nome = nome
+            produto.codigo = codigo
+            produto.categoria = categoria
+            produto.preco = preco
+            if imagem:
+                produto.imagem = imagem
+            produto.descricao = descricao
+            produto.fornecedor = fornecedor
+            produto.save()
+            messages.success(request, 'Produto editado com sucesso!')
+        except Produto.DoesNotExist:
+            messages.error(request, 'Produto não encontrado.')
+        return redirect('admin_produto_list')
+
+    # Exclusão de produto
+    if request.method == 'POST' and 'produto_id' in request.POST and 'delete-produto-id' in request.POST:
+        produto_id = request.POST.get('produto_id')
+        try:
+            produto = Produto.objects.get(id=produto_id)
+            produto.delete()
+            messages.success(request, 'Produto excluído com sucesso!')
+        except Produto.DoesNotExist:
+            messages.error(request, 'Produto não encontrado.')
+        return redirect('admin_produto_list')
+
+    produtos = Produto.objects.all().order_by('id')
+    fornecedores = Fornecedor.objects.all()
+    paginator = Paginator(produtos, per_page)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    contexto = {
+        'sidebar_links': get_sidebar_links(request.user),
+        'produtos': page_obj,
+        'fornecedores': fornecedores,
+    }
+    return render(request, 'pages/admin/produto_list.html', contexto)
 
 
 def get_sidebar_links(user):
@@ -243,10 +351,8 @@ def get_sidebar_links(user):
         return [
             {'url': '/administrador/painel/', 'label': 'Painel Administrador'},
             {'url': '/administrador/usuarios/', 'label': 'Gerenciar Usuários'},
-            {'url': '/administrador/produtos/adicionar/',
-                'label': 'Adicionar Produto'},
-            {'url': '/administrador/fornecedores/adicionar/',
-                'label': 'Adicionar Fornecedor'},
+            {'url': '/administrador/produtos/', 'label': 'Gerenciar Produtos'},
+            {'url': '/administrador/fornecedores/', 'label': 'Gerenciar Fornecedores'},
         ]
     elif role == 'USUARIO':
         return [
