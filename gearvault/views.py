@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .models import Produto, Fornecedor, Compra, ItemCompra, Estoque, LocalArmazenamento
+from .models import Produto, Fornecedor, Compra, ItemCompra, Estoque, LocalArmazenamento, Endereco
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, F, FloatField
 from django.contrib.auth.models import User
@@ -7,6 +7,7 @@ from contas.models import Profile
 from django.core.paginator import Paginator
 from django.contrib import messages
 from django.db import transaction
+from django.views.decorators.http import require_http_methods
 
 
 @login_required
@@ -162,12 +163,90 @@ def usuario_perfil(request):
     return render(request, 'pages/user/perfil.html', contexto)
 
 
+@login_required
+@require_http_methods(["GET", "POST"])
+def admin_produto_add(request):
+    if request.user.profile.role != 'ADMIN':
+        return redirect('login')
+    fornecedores = Fornecedor.objects.all()
+    if request.method == 'POST':
+        nome = request.POST.get('nome')
+        codigo = request.POST.get('codigo')
+        fornecedor_id = request.POST.get('fornecedor')
+        categoria = request.POST.get('categoria')
+        unidade = request.POST.get('unidade')
+        valor_unitario = request.POST.get('valor_unitario')
+        descricao = request.POST.get('descricao')
+        fornecedor = Fornecedor.objects.filter(
+            id=fornecedor_id).first() if fornecedor_id else None
+        if nome and codigo and valor_unitario:
+            try:
+                Produto.objects.create(
+                    nome=nome,
+                    codigo=codigo,
+                    fornecedor=fornecedor,
+                    descricao=descricao,
+                )
+                messages.success(request, 'Produto cadastrado com sucesso!')
+                return redirect('admin_produto_add')
+            except Exception as e:
+                messages.error(request, f'Erro ao cadastrar produto: {str(e)}')
+        else:
+            messages.error(request, 'Preencha os campos obrigatórios.')
+    contexto = {
+        'sidebar_links': get_sidebar_links(request.user),
+        'fornecedores': fornecedores,
+    }
+    return render(request, 'pages/admin/produto_add.html', contexto)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def admin_fornecedor_add(request):
+    if request.user.profile.role != 'ADMIN':
+        return redirect('login')
+    enderecos = Endereco.objects.all()
+    if request.method == 'POST':
+        nome = request.POST.get('nome')
+        cnpj = request.POST.get('cnpj')
+        email = request.POST.get('email')
+        telefone = request.POST.get('telefone')
+        endereco_id = request.POST.get('endereco')
+        endereco = Endereco.objects.filter(
+            id=endereco_id).first() if endereco_id else None
+        if nome and cnpj and email and telefone and endereco:
+            try:
+                Fornecedor.objects.create(
+                    nome=nome,
+                    cnpj=cnpj,
+                    email=email,
+                    telefone=telefone,
+                    endereco=endereco
+                )
+                messages.success(request, 'Fornecedor cadastrado com sucesso!')
+                return redirect('admin_fornecedor_add')
+            except Exception as e:
+                messages.error(
+                    request, f'Erro ao cadastrar fornecedor: {str(e)}')
+        else:
+            messages.error(request, 'Preencha todos os campos obrigatórios.')
+    contexto = {
+        'sidebar_links': get_sidebar_links(request.user),
+        'enderecos': enderecos,
+    }
+    return render(request, 'pages/admin/fornecedor_add.html', contexto)
+
+
 def get_sidebar_links(user):
     role = getattr(user.profile, 'role', None)
     if role == 'ADMIN':
         return [
             {'url': '/administrador/painel/', 'label': 'Painel Administrador'},
             {'url': '/administrador/usuarios/', 'label': 'Gerenciar Usuários'},
+            {'url': '/administrador/produtos/adicionar/',
+                'label': 'Adicionar Produto'},
+            {'url': '/administrador/fornecedores/adicionar/',
+                'label': 'Adicionar Fornecedor'},
         ]
     elif role == 'USUARIO':
         return [
