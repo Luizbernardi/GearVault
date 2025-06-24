@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Fornecedor, Comprador, LocalArmazenamento, Produto, Compra, ItemCompra, Estoque, Endereco
+from .models import Fornecedor, Comprador, LocalArmazenamento, Produto, Compra, ItemCompra, Estoque, Endereco, SolicitacaoProduto, SolicitacaoProduto
 
 
 @admin.register(Fornecedor)
@@ -51,3 +51,18 @@ class ItemCompraAdmin(admin.ModelAdmin):
     list_display = ("compra", "produto", "local", "quantidade", "valor_unitario")
     search_fields = ("produto__nome", "compra__id", "local__nome")
     list_filter = ("local",)
+
+
+@admin.register(SolicitacaoProduto)
+class SolicitacaoProdutoAdmin(admin.ModelAdmin):
+    list_display = ("id", "usuario", "produto", "local",
+                    "quantidade", "status", "data_solicitacao")
+    search_fields = ("usuario__username", "produto__nome", "local__nome")
+    list_filter = ("status", "data_solicitacao")
+    date_hierarchy = "data_solicitacao"
+    readonly_fields = ("data_solicitacao", "data_resposta")
+
+    def get_readonly_fields(self, request, obj=None):
+        if obj and obj.status != 'PENDENTE':
+            return self.readonly_fields + ("status", "resposta_admin", "admin_responsavel")
+        return self.readonly_fields

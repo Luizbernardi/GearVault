@@ -156,6 +156,35 @@ def admin_usuarios_list(request):
 
 @login_required
 def usuario_perfil(request):
+    if request.method == 'POST':
+        # Processar formulário de configuração de email
+        try:
+            profile = request.user.profile
+
+            # Atualizar configurações SMTP
+            profile.email_smtp_host = request.POST.get(
+                'email_smtp_host', 'smtp.gmail.com')
+            profile.email_smtp_port = int(
+                request.POST.get('email_smtp_port', 587))
+            profile.email_use_tls = 'email_use_tls' in request.POST
+
+            # Só atualiza a senha se foi fornecida
+            new_password = request.POST.get('email_smtp_password', '').strip()
+            if new_password:
+                profile.email_smtp_password = new_password
+
+            profile.save()
+
+            messages.success(
+                request, 'Configurações de email atualizadas com sucesso!')
+
+        except ValueError:
+            messages.error(request, 'Porta SMTP deve ser um número válido.')
+        except Exception as e:
+            messages.error(request, f'Erro ao salvar configurações: {str(e)}')
+
+        return redirect('usuario_perfil')
+
     contexto = {
         'sidebar_links': get_sidebar_links(request.user),
         'user': request.user,
@@ -198,38 +227,53 @@ def usuario_estoque_locais(request, estoque_id):
     """API endpoint para buscar locais de um estoque específico"""
     from django.http import JsonResponse
     from collections import defaultdict
+    from decimal import Decimal
     try:
         estoque = Estoque.objects.get(id=estoque_id)
         locais = LocalArmazenamento.objects.filter(
             estoque=estoque).order_by('nome')
         locais_data = []
         for local in locais:
-            # Agrupar itens por compra
+            # Agrupar itens por compra com informações detalhadas
             itens = ItemCompra.objects.select_related(
-                'produto', 'compra', 'compra__fornecedor').filter(local=local)
+                'produto', 'compra', 'compra__fornecedor', 'compra__comprador__user').filter(local=local)
             compras_dict = defaultdict(list)
             compras_info = {}
             for item in itens:
+                subtotal = item.quantidade * item.valor_unitario
                 compras_dict[item.compra.id].append({
                     'produto': item.produto.nome,
+                    'codigo': item.produto.codigo,
                     'quantidade': item.quantidade,
                     'valor_unitario': float(item.valor_unitario),
+                    'subtotal': float(subtotal),
                 })
                 if item.compra.id not in compras_info:
                     compras_info[item.compra.id] = {
                         'data': item.compra.data.strftime('%d/%m/%Y'),
                         'fornecedor': item.compra.fornecedor.nome,
                         'comprador': item.compra.comprador.user.get_full_name() or item.compra.comprador.user.username,
+                        'valor_total': float(item.compra.valor_total) if item.compra.valor_total else 0.0,
+                        'invoice_url': item.compra.invoice.url if item.compra.invoice else None,
                     }
             compras = []
             for compra_id, itens_compra in compras_dict.items():
+                total_itens = sum(item['quantidade'] for item in itens_compra)
+                valor_total_compra = sum(item['subtotal']
+                                         for item in itens_compra)
                 compras.append({
                     'id': compra_id,
                     'data': compras_info[compra_id]['data'],
                     'fornecedor': compras_info[compra_id]['fornecedor'],
                     'comprador': compras_info[compra_id]['comprador'],
+                    'valor_total': compras_info[compra_id]['valor_total'],
+                    'invoice_url': compras_info[compra_id]['invoice_url'],
+                    'total_itens': total_itens,
+                    'valor_itens_local': valor_total_compra,
                     'itens': itens_compra
                 })
+            # Ordenar compras por data (mais recente primeiro)
+            compras.sort(key=lambda x: x['data'], reverse=True)
             total_itens = sum(item['quantidade']
                               for compra in compras for item in compra['itens'])
             locais_data.append({
@@ -237,6 +281,7 @@ def usuario_estoque_locais(request, estoque_id):
                 'nome': local.nome,
                 'descricao': local.descricao or '',
                 'total_itens': total_itens,
+                'total_compras': len(compras),
                 'compras': compras
             })
         return JsonResponse({
@@ -433,139 +478,333 @@ def admin_produto_list(request):
     contexto = {
         'sidebar_links': get_sidebar_links(request.user),
         'produtos': page_obj,
-        'fornecedores': fornecedores,
-    }
+        'fornecedores': fornecedores,    }
     return render(request, 'pages/admin/produto_list.html', contexto)
 
 
 @login_required
-def usuario_compras(request):
+def usuario_estoque_detalhes(request, estoque_id):
     from django.core.paginator import Paginator
-    compras_list = Compra.objects.filter(
-        comprador__user=request.user).order_by('-data', '-id')
-    paginator = Paginator(compras_list, 10)
-    page_number = request.GET.get('page')
-    compras = paginator.get_page(page_number)
-    contexto = {
-        'sidebar_links': get_sidebar_links(request.user),
-        'compras': compras,
-    }
-    return render(request, 'pages/user/compras_list.html', contexto)
-
-
-@login_required
-def usuario_compra_detalhes(request, compra_id):
-    from django.http import JsonResponse
-    from django.utils.dateformat import DateFormat
-    from django.utils.formats import get_format
+    from django.db.models import Sum
     try:
-        compra = Compra.objects.select_related('fornecedor', 'estoque').get(
-            id=compra_id, comprador__user=request.user)
-        itens = ItemCompra.objects.select_related(
-            'produto', 'local').filter(compra=compra)
-        itens_data = []
-        for item in itens:
-            subtotal = item.quantidade * item.valor_unitario
-            itens_data.append({
-                'produto': item.produto.nome,
-                'local': item.local.nome,
-                'quantidade': item.quantidade,
-                'valor_unitario': f'{item.valor_unitario:.2f}',
-                'subtotal': f'{subtotal:.2f}'
-            })
-        data_formatada = DateFormat(compra.data).format(
-            get_format('DATE_FORMAT'))
-        response = {
-            'success': True,
-            'compra': {
-                'data': data_formatada,
-                'fornecedor': compra.fornecedor.nome,
-                'estoque': compra.estoque.nome,
-                'valor_total': f'{compra.valor_total:.2f}',
-                'invoice_url': compra.invoice.url if compra.invoice else None,
-            },
-            'itens': itens_data
+        estoque = Estoque.objects.prefetch_related('locais').get(id=estoque_id)
+        locais_list = LocalArmazenamento.objects.filter(
+            estoque=estoque).order_by('nome')
+
+        # Adicionar informações de produtos para cada local
+        for local in locais_list:
+            # Buscar produtos únicos neste local com totais
+            produtos_no_local = ItemCompra.objects.filter(local=local).values(
+                'produto__nome', 'produto__codigo', 'produto__id'
+            ).annotate(
+                quantidade_total=Sum('quantidade')
+            ).order_by('produto__nome')
+            local.produtos = produtos_no_local
+            local.total_produtos = produtos_no_local.count()
+
+        # Configurar paginação para locais
+        per_page = request.GET.get('per_page', 5)
+        try:
+            per_page = int(per_page)
+            if per_page not in [5, 10, 15]:
+                per_page = 5
+        except (ValueError, TypeError):
+            per_page = 5
+
+        paginator = Paginator(locais_list, per_page)
+        page_number = request.GET.get('page')
+        locais = paginator.get_page(page_number)
+
+        contexto = {
+            'sidebar_links': get_sidebar_links(request.user),
+            'estoque': estoque,
+            'locais': locais,
         }
-        return JsonResponse(response)
-    except Compra.DoesNotExist:
-        return JsonResponse({'success': False, 'error': 'Compra não encontrada'})
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        return render(request, 'pages/user/estoque_detalhes.html', contexto)
+    except Estoque.DoesNotExist:
+        messages.error(request, 'Estoque não encontrado.')
+        return redirect('usuario_estoques')
+
+
+# Solicitações de Produtos
+
+@login_required
+def usuario_solicitar_produto(request, local_id, produto_id):
+    """View para criar uma solicitação de produto"""
+    from django.core.mail import send_mail
+    from django.conf import settings
+    from django.urls import reverse
+
+    try:
+        local = LocalArmazenamento.objects.get(id=local_id)
+        produto = Produto.objects.get(id=produto_id)
+
+        # Verificar se há estoque disponível
+        quantidade_disponivel = ItemCompra.objects.filter(
+            local=local, produto=produto
+        ).aggregate(total=Sum('quantidade'))['total'] or 0
+
+        if request.method == 'POST':
+            quantidade = int(request.POST.get('quantidade', 0))
+            justificativa = request.POST.get('justificativa', '').strip()
+
+            if quantidade <= 0:
+                messages.error(request, 'Quantidade deve ser maior que zero.')
+            elif quantidade > quantidade_disponivel:
+                messages.error(
+                    request, f'Quantidade solicitada excede o estoque disponível ({quantidade_disponivel} unidades).')
+            elif not justificativa:
+                messages.error(request, 'Justificativa é obrigatória.')
+            else:
+                # Criar solicitação
+                from .models import SolicitacaoProduto
+                solicitacao = SolicitacaoProduto.objects.create(
+                    usuario=request.user,
+                    produto=produto,
+                    local=local,
+                    quantidade=quantidade,
+                    justificativa=justificativa
+                )                # Enviar email para administradores usando o email do usuário logado
+                try:
+                    from .email_utils import send_email_from_user, get_admin_emails
+
+                    admin_emails = get_admin_emails()
+
+                    if admin_emails:
+                        subject = f'Nova Solicitação de Produto - {produto.nome}'
+                        message = f"""
+Nova solicitação de produto recebida:
+
+Solicitante: {request.user.get_full_name() or request.user.username}
+Email: {request.user.email}
+Produto: {produto.nome} ({produto.codigo})
+Local: {local.nome} ({local.estoque.nome})
+Quantidade: {quantidade}
+Justificativa: {justificativa}
+
+Para aprovar ou rejeitar esta solicitação, acesse:
+{request.build_absolute_uri(reverse('admin_solicitacoes'))}
+
+ID da Solicitação: {solicitacao.id}
+                        """
+
+                        send_email_from_user(
+                            user=request.user,
+                            subject=subject,
+                            message=message,
+                            recipient_list=admin_emails,
+                            fail_silently=True
+                        )
+                    else:
+                        print("Nenhum administrador com email configurado encontrado")
+
+                except Exception as e:
+                    print(f"Erro ao enviar email: {e}")
+                    # Não falha a solicitação se o email não for enviado
+
+                messages.success(
+                    request, 'Solicitação criada com sucesso! O administrador será notificado.')
+                return redirect('usuario_estoque_detalhes', estoque_id=local.estoque.id)
+
+        contexto = {
+            'sidebar_links': get_sidebar_links(request.user),
+            'local': local,
+            'produto': produto,
+            'quantidade_disponivel': quantidade_disponivel,
+        }
+        return render(request, 'pages/user/solicitar_produto.html', contexto)
+
+    except (LocalArmazenamento.DoesNotExist, Produto.DoesNotExist):
+        messages.error(request, 'Local ou produto não encontrado.')
+        return redirect('usuario_estoques')
 
 
 @login_required
-def usuario_compra_add(request):
-    from django.db import transaction
-    if request.method == 'POST':
-        estoque_id = request.POST.get('estoque')
-        local_id = request.POST.get('local')
-        fornecedor_id = request.POST.get('fornecedor')
-        invoice = request.FILES.get('invoice')
-        produtos = request.POST.getlist('produto[]')
-        quantidades = request.POST.getlist('quantidade[]')
-        valores_unitarios = request.POST.getlist('valor_unitario[]')
-        erros = []
-        if not (estoque_id and local_id and fornecedor_id and produtos and quantidades and valores_unitarios):
-            erros.append('Preencha todos os campos obrigatórios.')
-        if len(produtos) != len(quantidades) or len(produtos) != len(valores_unitarios):
-            erros.append('Itens da compra estão inconsistentes.')
-        if erros:
-            messages.error(request, ' '.join(erros))
-        else:
-            try:
-                with transaction.atomic():
-                    estoque = Estoque.objects.get(id=estoque_id)
-                    local = LocalArmazenamento.objects.get(
-                        id=local_id, estoque=estoque)
-                    fornecedor = Fornecedor.objects.get(id=fornecedor_id)
-                    compra = Compra.objects.create(
-                        estoque=estoque,
-                        fornecedor=fornecedor,
-                        comprador=request.user.comprador,
-                        invoice=invoice
-                    )
-                    for i in range(len(produtos)):
-                        produto = Produto.objects.get(id=produtos[i])
-                        quantidade = int(quantidades[i])
-                        valor_unitario = float(valores_unitarios[i])
-                        ItemCompra.objects.create(
-                            compra=compra,
-                            produto=produto,
-                            local=local,
-                            quantidade=quantidade,
-                            valor_unitario=valor_unitario
-                        )
-                    messages.success(request, 'Compra cadastrada com sucesso!')
-                    return redirect('usuario_compras')
-            except Exception as e:
-                messages.error(request, f'Erro ao cadastrar compra: {str(e)}')
-    estoques = Estoque.objects.prefetch_related('locais').all()
-    fornecedores = Fornecedor.objects.all()
-    produtos = Produto.objects.all()
+def usuario_minhas_solicitacoes(request):
+    """Lista das solicitações do usuário"""
+    from .models import SolicitacaoProduto
+
+    solicitacoes_list = SolicitacaoProduto.objects.filter(
+        usuario=request.user
+    ).select_related('produto', 'local', 'local__estoque').order_by('-data_solicitacao')
+
+    # Paginação
+    paginator = Paginator(solicitacoes_list, 10)
+    page_number = request.GET.get('page')
+    solicitacoes = paginator.get_page(page_number)
+
     contexto = {
         'sidebar_links': get_sidebar_links(request.user),
-        'estoques': estoques,
-        'fornecedores': fornecedores,
-        'produtos': produtos,
+        'solicitacoes': solicitacoes,
     }
-    return render(request, 'pages/user/compra_add.html', contexto)
+    return render(request, 'pages/user/minhas_solicitacoes.html', contexto)
+
+
+@login_required
+def admin_solicitacoes(request):
+    """Lista de solicitações para administradores"""
+    if request.user.profile.role != 'ADMIN':
+        return redirect('login')
+
+    from .models import SolicitacaoProduto
+
+    status_filter = request.GET.get('status', 'PENDENTE')
+    solicitacoes_list = SolicitacaoProduto.objects.select_related(
+        'usuario', 'produto', 'local', 'local__estoque'
+    ).order_by('-data_solicitacao')
+
+    if status_filter and status_filter != 'TODAS':
+        solicitacoes_list = solicitacoes_list.filter(status=status_filter)
+
+    # Paginação
+    paginator = Paginator(solicitacoes_list, 15)
+    page_number = request.GET.get('page')
+    solicitacoes = paginator.get_page(page_number)
+
+    contexto = {
+        'sidebar_links': get_sidebar_links(request.user),
+        'solicitacoes': solicitacoes,
+        'status_filter': status_filter,
+    }
+    return render(request, 'pages/admin/solicitacoes_list.html', contexto)
+
+
+@login_required
+def admin_processar_solicitacao(request, solicitacao_id):
+    """Processar (aprovar/rejeitar) solicitação"""
+    if request.user.profile.role != 'ADMIN':
+        return redirect('login')
+
+    from .models import SolicitacaoProduto
+    from django.core.mail import send_mail
+    from django.conf import settings
+    from django.utils import timezone
+
+    try:
+        solicitacao = SolicitacaoProduto.objects.select_related(
+            'usuario', 'produto', 'local'
+        ).get(id=solicitacao_id)
+
+        if solicitacao.status != 'PENDENTE':
+            messages.error(request, 'Esta solicitação já foi processada.')
+            return redirect('admin_solicitacoes')
+
+        if request.method == 'POST':
+            acao = request.POST.get('acao')
+            resposta_admin = request.POST.get('resposta_admin', '').strip()
+
+            if acao == 'aprovar':
+                # Verificar se ainda há estoque suficiente
+                quantidade_disponivel = ItemCompra.objects.filter(
+                    local=solicitacao.local, produto=solicitacao.produto
+                ).aggregate(total=Sum('quantidade'))['total'] or 0
+
+                if solicitacao.quantidade > quantidade_disponivel:
+                    messages.error(
+                        request, f'Estoque insuficiente. Disponível: {quantidade_disponivel} unidades.')
+                    return redirect('admin_processar_solicitacao', solicitacao_id=solicitacao_id)
+
+                # Reduzir do estoque
+                itens_compra = ItemCompra.objects.filter(
+                    local=solicitacao.local, produto=solicitacao.produto
+                ).order_by('compra__data')
+
+                quantidade_restante = solicitacao.quantidade
+
+                with transaction.atomic():
+                    for item in itens_compra:
+                        if quantidade_restante <= 0:
+                            break
+
+                        if item.quantidade <= quantidade_restante:
+                            quantidade_restante -= item.quantidade
+                            item.delete()
+                        else:
+                            item.quantidade -= quantidade_restante
+                            item.save()
+                            quantidade_restante = 0
+
+                    solicitacao.status = 'APROVADA'
+                    solicitacao.data_resposta = timezone.now()
+                    solicitacao.admin_responsavel = request.user
+                    solicitacao.resposta_admin = resposta_admin
+                    solicitacao.save()
+
+                status_msg = 'aprovada'
+                messages.success(request, 'Solicitação aprovada com sucesso!')
+
+            elif acao == 'rejeitar':
+                solicitacao.status = 'REJEITADA'
+                solicitacao.data_resposta = timezone.now()
+                solicitacao.admin_responsavel = request.user
+                solicitacao.resposta_admin = resposta_admin
+                solicitacao.save()
+
+                status_msg = 'rejeitada'
+                messages.success(request, 'Solicitação rejeitada.')
+
+            else:
+                messages.error(request, 'Ação inválida.')
+                # Enviar email ao usuário usando o email do admin logado
+                return redirect('admin_processar_solicitacao', solicitacao_id=solicitacao_id)
+            try:
+                if solicitacao.usuario.email:
+                    from .email_utils import send_email_from_user
+
+                    subject = f'Solicitação {status_msg.capitalize()} - {solicitacao.produto.nome}'
+                    message = f"""
+Sua solicitação foi {status_msg}:
+
+Produto: {solicitacao.produto.nome} ({solicitacao.produto.codigo})
+Quantidade: {solicitacao.quantidade}
+Status: {solicitacao.get_status_display()}
+Processado por: {request.user.get_full_name() or request.user.username}
+Data: {solicitacao.data_resposta.strftime('%d/%m/%Y às %H:%M')}
+
+{f'Resposta do administrador: {resposta_admin}' if resposta_admin else ''}
+
+Você pode verificar suas solicitações em: {request.build_absolute_uri('/usuario/solicitacoes/')}
+                    """
+
+                    send_email_from_user(
+                        user=request.user,  # Admin logado envia
+                        subject=subject,
+                        message=message,
+                        # Usuário recebe
+                        recipient_list=[solicitacao.usuario.email],
+                        fail_silently=True
+                    )
+            except Exception as e:
+                print(f"Erro ao enviar email: {e}")
+
+            return redirect('admin_solicitacoes')
+
+        contexto = {
+            'sidebar_links': get_sidebar_links(request.user),
+            'solicitacao': solicitacao,
+        }
+        return render(request, 'pages/admin/processar_solicitacao.html', contexto)
+
+    except SolicitacaoProduto.DoesNotExist:
+        messages.error(request, 'Solicitação não encontrada.')
+        return redirect('admin_solicitacoes')
 
 
 def get_sidebar_links(user):
     role = getattr(user.profile, 'role', None)
-    if role == 'ADMIN':
-        return [
+    if role == 'ADMIN':        return [
             {'url': '/administrador/painel/', 'label': 'Painel Administrador'},
             {'url': '/administrador/usuarios/', 'label': 'Gerenciar Usuários'},
             {'url': '/administrador/produtos/', 'label': 'Gerenciar Produtos'},
             {'url': '/administrador/fornecedores/', 'label': 'Gerenciar Fornecedores'},
+            {'url': '/administrador/solicitacoes/',
+                'label': 'Solicitações de Produtos'},
         ]
     elif role == 'USUARIO':
         return [
             {'url': '/usuario/painel/', 'label': 'Dashboard'},
             {'url': '/usuario/perfil/', 'label': 'Perfil'},
             {'url': '/usuario/estoques/', 'label': 'Estoques'},
-            {'url': '/usuario/compras/', 'label': 'Minhas Compras'},
-            {'url': '/usuario/compras/nova/', 'label': 'Nova Compra'},
+            {'url': '/usuario/solicitacoes/', 'label': 'Minhas Solicitações'},
         ]
     return []

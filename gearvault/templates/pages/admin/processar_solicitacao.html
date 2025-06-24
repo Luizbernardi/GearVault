@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Processar Solicitação{% endblock %}
+
+{% block content %}
+<div class="container-fluid" id="main-content-panel">
+  <div class="row">
+    <div class="col-md-2" id="sidebar-panel">
+      {% include 'sidebar.html' %}
+    </div>
+    <div class="col-md-10" id="painel-content">
+      <!-- Breadcrumb -->
+      <nav aria-label="breadcrumb" class="mt-4">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'admin_solicitacoes' %}">Solicitações</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Processar Solicitação #{{ solicitacao.id }}</li>
+        </ol>
+      </nav>
+
+      <div class="card" style="border: 1px solid #083D77;">
+        <div class="card-header text-white" style="background-color: #083D77;">
+          <h4 class="mb-0"><i class="bi bi-gear"></i> Processar Solicitação #{{ solicitacao.id }}</h4>
+        </div>
+        <div class="card-body">
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <!-- Informações da Solicitação -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="card border-light">
+                <div class="card-header bg-light">
+                  <h6 class="mb-0"><i class="bi bi-person"></i> Solicitante</h6>
+                </div>
+                <div class="card-body">
+                  <h5>{{ solicitacao.usuario.get_full_name|default:solicitacao.usuario.username }}</h5>
+                  <p class="text-muted mb-1"><strong>Email:</strong> {{ solicitacao.usuario.email }}</p>
+                  <p class="text-muted mb-0"><strong>Data da Solicitação:</strong> {{ solicitacao.data_solicitacao|date:"d/m/Y H:i" }}</p>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card border-light">
+                <div class="card-header bg-light">
+                  <h6 class="mb-0"><i class="bi bi-box"></i> Produto Solicitado</h6>
+                </div>
+                <div class="card-body">
+                  <h5>{{ solicitacao.produto.nome }}</h5>
+                  <p class="text-muted mb-1"><strong>Código:</strong> {{ solicitacao.produto.codigo }}</p>
+                  <p class="text-muted mb-1"><strong>Local:</strong> {{ solicitacao.local.nome }} ({{ solicitacao.local.estoque.nome }})</p>
+                  <span class="badge bg-info fs-6">{{ solicitacao.quantidade }} unidades</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Justificativa -->
+          <div class="card border-light mb-4">
+            <div class="card-header bg-light">
+              <h6 class="mb-0"><i class="bi bi-chat-text"></i> Justificativa</h6>
+            </div>
+            <div class="card-body">
+              <p class="mb-0">{{ solicitacao.justificativa }}</p>
+            </div>
+          </div>
+
+          <!-- Verificação de Estoque -->
+          {% load gearvault_tags %}
+          {% quantidade_disponivel solicitacao.local solicitacao.produto as estoque_atual %}
+          <div class="alert {% if estoque_atual >= solicitacao.quantidade %}alert-success{% else %}alert-warning{% endif %}" role="alert">
+            <i class="bi bi-info-circle"></i>
+            <strong>Estoque Atual:</strong> {{ estoque_atual }} unidades disponíveis
+            {% if estoque_atual < solicitacao.quantidade %}
+              <br><strong>Atenção:</strong> Estoque insuficiente para atender completamente esta solicitação.
+            {% endif %}
+          </div>
+
+          <!-- Formulário de Decisão -->
+          <form method="post">
+            {% csrf_token %}
+            <div class="row mb-3">
+              <div class="col-md-12">
+                <label for="resposta_admin" class="form-label"><strong>Observações (opcional)</strong></label>
+                <textarea class="form-control" id="resposta_admin" name="resposta_admin" rows="3" 
+                          placeholder="Adicione observações sobre sua decisão..."></textarea>
+              </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+              <button type="submit" name="acao" value="aprovar" class="btn btn-success" 
+                      {% if estoque_atual < solicitacao.quantidade %}
+                        onclick="return confirm('O estoque é insuficiente. Deseja aprovar mesmo assim? Isso pode causar estoque negativo.')"
+                      {% endif %}>
+                <i class="bi bi-check-circle"></i> Aprovar Solicitação
+              </button>
+              <button type="submit" name="acao" value="rejeitar" class="btn btn-danger">
+                <i class="bi bi-x-circle"></i> Rejeitar Solicitação
+              </button>
+              <a href="{% url 'admin_solicitacoes' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Voltar
+              </a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #painel-content {
+    transition: width 0.3s cubic-bezier(0.4,0,0.2,1), margin-left 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  #sidebar-panel {
+    transition: width 0.3s cubic-bezier(0.4,0,0.2,1), display 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+</style>
+<script src="{% static 'painel-content-resize.js' %}"></script>
+{% endblock %}
