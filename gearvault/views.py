@@ -21,27 +21,34 @@ def usuario_painel(request):
     total_produtos = produtos.count()
     total_estoque = ItemCompra.objects.aggregate(
         total=Sum('quantidade'))['total'] or 0
-    valor_total_estoque = ItemCompra.objects.aggregate(
-        total=Sum(F('quantidade') * F('valor_unitario'),
-                  output_field=FloatField())
-    )['total'] or 0
-    compras = Compra.objects.filter(comprador__user=request.user)
-    estoques = Estoque.objects.prefetch_related('locais', 'compras')
+    
+    # Buscar solicitações recentes do usuário
+    from .models import SolicitacaoProduto
+    minhas_solicitacoes = SolicitacaoProduto.objects.filter(
+        usuario=request.user
+    ).select_related('produto', 'local', 'local__estoque').order_by('-data_solicitacao')[:5]
+    
+    # Buscar produtos disponíveis em estoque (agregados por produto/local)
+    produtos_disponiveis = ItemCompra.objects.values(
+        'produto__nome', 'local__nome', 'local__estoque__nome'
+    ).annotate(
+        quantidade_total=Sum('quantidade')
+    ).filter(
+        quantidade_total__gt=0
+    ).order_by('-quantidade_total')[:5]
+    
+    estoques = Estoque.objects.prefetch_related('locais')
     fornecedores = Fornecedor.objects.all()
-    # Movimentações recentes apenas do usuário logado (ItemCompra das compras do usuário)
-    movimentacoes = ItemCompra.objects.filter(
-        compra__comprador__user=request.user).order_by('-id')[:5]
 
     contexto = {
         'sidebar_links': get_sidebar_links(request.user),
         'produtos': produtos,
         'total_produtos': total_produtos,
         'total_estoque': total_estoque,
-        'valor_total_estoque': valor_total_estoque,
-        'compras': compras,
+        'minhas_solicitacoes': minhas_solicitacoes,
+        'produtos_disponiveis': produtos_disponiveis,
         'estoques': estoques,
         'fornecedores': fornecedores,
-        'movimentacoes': movimentacoes,
     }
     return render(request, 'pages/user/painel.html', contexto)
 
@@ -156,35 +163,9 @@ def admin_usuarios_list(request):
 
 @login_required
 def usuario_perfil(request):
-    if request.method == 'POST':
-        # Processar formulário de configuração de email
-        try:
-            profile = request.user.profile
-
-            # Atualizar configurações SMTP
-            profile.email_smtp_host = request.POST.get(
-                'email_smtp_host', 'smtp.gmail.com')
-            profile.email_smtp_port = int(
-                request.POST.get('email_smtp_port', 587))
-            profile.email_use_tls = 'email_use_tls' in request.POST
-
-            # Só atualiza a senha se foi fornecida
-            new_password = request.POST.get('email_smtp_password', '').strip()
-            if new_password:
-                profile.email_smtp_password = new_password
-
-            profile.save()
-
-            messages.success(
-                request, 'Configurações de email atualizadas com sucesso!')
-
-        except ValueError:
-            messages.error(request, 'Porta SMTP deve ser um número válido.')
-        except Exception as e:
-            messages.error(request, f'Erro ao salvar configurações: {str(e)}')
-
-        return redirect('usuario_perfil')
-
+    # View simplificada - apenas exibe informações do perfil
+    # Configurações SMTP são gerenciadas apenas por administradores
+    
     contexto = {
         'sidebar_links': get_sidebar_links(request.user),
         'user': request.user,
@@ -198,9 +179,15 @@ def usuario_estoques(request):
 
     # Buscar todos os estoques com informações relacionadas
     estoques_list = Estoque.objects.prefetch_related('locais').annotate(
-        total_locais=Count('locais'),
-        total_itens=Sum('compras__itens__quantidade')
+        total_locais=Count('locais', distinct=True)
     ).order_by('nome')
+    
+    # Calcular total de itens separadamente para evitar problemas com joins múltiplos
+    for estoque in estoques_list:
+        total_itens = ItemCompra.objects.filter(
+            local__estoque=estoque
+        ).aggregate(total=Sum('quantidade'))['total'] or 0
+        estoque.total_itens = total_itens
 
     # Configurar paginação
     per_page = request.GET.get('per_page', 10)

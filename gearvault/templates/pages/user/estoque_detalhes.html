@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function() {
                       <span class='badge bg-info'><i class='bi bi-truck'></i> ${compra.fornecedor}</span>
                     </div>
                     <div class='d-flex flex-wrap gap-2'>
-                      <span class='badge bg-success'>R$ ${compra.valor_itens_local.toFixed(2)}</span>
+                      <span class='badge bg-success'><i class='bi bi-box'></i> ${compra.total_itens} itens</span>
                       ${compra.invoice_url ? `<a href='${compra.invoice_url}' target='_blank' class='badge bg-warning text-decoration-none'><i class='bi bi-file-earmark-pdf'></i> Invoice</a>` : ''}
                     </div>
                   </div>
@@ -272,8 +272,6 @@ document.addEventListener('DOMContentLoaded', function() {
                           <th>Produto</th>
                           <th>Código</th>
                           <th>Quantidade</th>
-                          <th>Valor Unitário</th>
-                          <th>Subtotal</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -282,8 +280,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             <td><strong>${item.produto}</strong></td>
                             <td><small class="text-muted">${item.codigo}</small></td>
                             <td><span class="badge bg-light text-dark">${item.quantidade}</span></td>
-                            <td>R$ ${item.valor_unitario.toFixed(2)}</td>
-                            <td><strong>R$ ${item.subtotal.toFixed(2)}</strong></td>
                           </tr>
                         `).join('')}
                       </tbody>

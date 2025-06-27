@@ -11,142 +11,194 @@ GearVault
       {% include 'sidebar.html' %}
     </div>
     <div class="col-md-10 mt-4" id="painel-content">
-      <div class="row">
-        <div class="col-md-3 mb-3">
-          <div class="card text-white h-100" style="background-color: #083D77;">
-            <div class="card-body">
-              <h5 class="card-title">Produtos Cadastrados</h5>
-              <p class="card-text display-6">{{ total_produtos }}</p>
+      <!-- Welcome Banner -->
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card border-0" style="background: linear-gradient(135deg, #083D77 0%, #0056b3 100%);">
+            <div class="card-body text-white py-4">
+              <h2 class="mb-2">Bem-vindo, {{ user.get_full_name|default:user.username }}!</h2>
+              <p class="mb-0 opacity-75">Gerencie suas solicitações e consulte o estoque de componentes eletrônicos</p>
             </div>
           </div>
         </div>
-        <div class="col-md-3 mb-3">
+      </div>
+
+      <!-- Cards de Estatísticas Principais -->
+      <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
           <div class="card text-white h-100" style="background-color: #083D77;">
-            <div class="card-body">
-              <h5 class="card-title">Total em Estoque</h5>
+            <div class="card-body text-center">
+              <i class="bi bi-box-seam display-4 mb-2"></i>
+              <h5 class="card-title">Itens em Estoque</h5>
               <p class="card-text display-6">{{ total_estoque }}</p>
             </div>
           </div>
         </div>
-        <div class="col-md-3 mb-3">
-          <div class="card text-white h-100" style="background-color: #083D77;">
-            <div class="card-body">
-              <h5 class="card-title">Valor Total do Estoque</h5>
-              <p class="card-text display-6">R$ {{ valor_total_estoque|floatformat:2 }}</p>
+        <div class="col-lg-3 col-md-6 mb-3">
+          <div class="card text-white h-100" style="background-color: #28a745;">
+            <div class="card-body text-center">
+              <i class="bi bi-clipboard-check display-4 mb-2"></i>
+              <h5 class="card-title">Minhas Solicitações</h5>
+              <p class="card-text display-6">{{ minhas_solicitacoes|length }}</p>
             </div>
           </div>
         </div>
-        <div class="col-md-3 mb-3">
-          <div class="card text-white h-100" style="background-color: #083D77;">
-            <div class="card-body">
-              <h5 class="card-title">Fornecedores</h5>
-              <p class="card-text display-6">{{ fornecedores|length }}</p>
+        <div class="col-lg-3 col-md-6 mb-3">
+          <div class="card text-white h-100" style="background-color: #17a2b8;">
+            <div class="card-body text-center">
+              <i class="bi bi-archive display-4 mb-2"></i>
+              <h5 class="card-title">Estoques Disponíveis</h5>
+              <p class="card-text display-6">{{ estoques|length }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+          <div class="card text-white h-100" style="background-color: #ffc107; color: #212529 !important;">
+            <div class="card-body text-center">
+              <i class="bi bi-gear display-4 mb-2"></i>
+              <h5 class="card-title" style="color: #212529 !important;">Produtos Cadastrados</h5>
+              <p class="card-text display-6" style="color: #212529 !important;">{{ total_produtos }}</p>
             </div>
           </div>
         </div>
       </div>
-      <div class="row mt-4">
-        <div class="col-md-4 mb-4">
+      <!-- Seção Principal: Solicitações e Produtos Disponíveis -->
+      <div class="row mb-4">
+        <div class="col-lg-8 mb-4">
           <div class="card h-100" style="border: 1px solid #083D77;">
-            <div class="card-header text-white" style="background-color: #083D77;">Produtos Recentes</div>
-            <ul class="list-group list-group-flush">
-              {% for produto in produtos|slice:':5' %}
-              <li class="list-group-item">
-                <strong>{{ produto.nome }}</strong><br>
-                Código: {{ produto.codigo }}<br>
-                Fornecedor: {% if produto.fornecedor %}{{ produto.fornecedor.nome }}{% else %}-{% endif %}
-              </li>
-              {% empty %}
-              <li class="list-group-item">Nenhum produto cadastrado.</li>
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
-        <div class="col-md-4 mb-4">
-          <div class="card h-100" style="border: 1px solid #083D77;">
-            <div class="card-header text-white" style="background-color: #083D77;">Minhas Compras</div>
-            <ul class="list-group list-group-flush">
-              {% for compra in compras|slice:':5' %}
-              <li class="list-group-item">
-                <strong>ID:</strong> {{ compra.id }}<br>
-                <strong>Data:</strong> {{ compra.data }}<br>
-                <strong>Fornecedor:</strong> {{ compra.fornecedor.nome }}<br>
-                <strong>Valor:</strong> R$ {{ compra.valor_total|floatformat:2 }}
-              </li>
-              {% empty %}
-              <li class="list-group-item">Nenhuma compra cadastrada.</li>
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
-        <div class="col-md-4 mb-4">
-          <div class="card h-100" style="border: 1px solid #083D77;">
-            <div class="card-header text-white" style="background-color: #083D77;">Estoques e Locais</div>
-            <ul class="list-group list-group-flush">
-              {% for estoque in estoques|slice:':5' %}
-              <li class="list-group-item">
-                <strong>Produto:</strong> {{ estoque.lote.item_compra.produto.nome }}<br>
-                <strong>Lote:</strong> {{ estoque.lote.id }}<br>
-                <strong>Local:</strong> {{ estoque.local.nome }}<br>
-                <strong>Quantidade:</strong> {{ estoque.quantidade }}
-              </li>
-              {% empty %}
-              <li class="list-group-item">Nenhum estoque cadastrado.</li>
-              {% endfor %}
-            </ul>
-          </div>
-        </div>
-      </div>
-      <div class="row mt-4">
-        <div class="col-md-6 mb-4">
-          <div class="card h-100" style="border: 1px solid #083D77;">
-            <div class="card-header text-white" style="background-color: #083D77;">Movimentações Recentes</div>
+            <div class="card-header text-white d-flex justify-content-between align-items-center" style="background-color: #083D77;">
+              <h5 class="mb-0"><i class="bi bi-clipboard-check"></i> Minhas Solicitações Recentes</h5>
+              <a href="{% url 'usuario_minhas_solicitacoes' %}" class="btn btn-sm btn-outline-light">Ver Todas</a>
+            </div>
             <div class="card-body">
-              <div class="row">
-                {% for mov in movimentacoes|slice:':4' %}
-                <div class="col-md-12 mb-3">
-                  <div class="card h-100 border-secondary">
-                    <div class="card-body">
-                      <strong>Produto:</strong> {{ mov.produto.nome }}<br>
-                      <strong>Quantidade:</strong> {{ mov.quantidade }}<br>
-                      <strong>Valor Unitário:</strong> R$ {{ mov.valor_unitario|floatformat:2 }}<br>
-                      <strong>Estoque:</strong> {{ mov.compra.estoque.nome }}<br>
-                      <strong>Local:</strong> {{ mov.local.nome }}<br>
-                      <strong>Data da Compra:</strong> {{ mov.compra.data }}
+              {% if minhas_solicitacoes %}
+                <div class="row">
+                  {% for solicitacao in minhas_solicitacoes|slice:':4' %}
+                  <div class="col-md-6 mb-3">
+                    <div class="card border-light shadow-sm h-100">
+                      <div class="card-body">
+                        <h6 class="card-title">{{ solicitacao.produto.nome }}</h6>
+                        <p class="card-text mb-2">
+                          <small class="text-muted">{{ solicitacao.local.nome }} • {{ solicitacao.local.estoque.nome }}</small>
+                        </p>
+                        <div class="d-flex justify-content-between align-items-center">
+                          <span class="badge bg-secondary">{{ solicitacao.quantidade }} unidades</span>
+                          {% if solicitacao.status == 'PENDENTE' %}
+                            <span class="badge bg-warning"><i class="bi bi-clock"></i> Pendente</span>
+                          {% elif solicitacao.status == 'APROVADA' %}
+                            <span class="badge bg-success"><i class="bi bi-check-circle"></i> Aprovada</span>
+                          {% elif solicitacao.status == 'REJEITADA' %}
+                            <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Rejeitada</span>
+                          {% endif %}
+                        </div>
+                      </div>
                     </div>
                   </div>
+                  {% endfor %}
                 </div>
-                {% empty %}
-                <div class="col-12">Nenhuma movimentação recente.</div>
+              {% else %}
+                <div class="text-center py-4">
+                  <i class="bi bi-inbox display-1 text-muted"></i>
+                  <p class="text-muted mt-2">Você ainda não fez nenhuma solicitação.</p>
+                  <a href="{% url 'usuario_estoques' %}" class="btn btn-primary">
+                    <i class="bi bi-plus"></i> Explorar Estoques
+                  </a>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+          <div class="card h-100" style="border: 1px solid #083D77;">
+            <div class="card-header text-white d-flex justify-content-between align-items-center" style="background-color: #083D77;">
+              <h5 class="mb-0"><i class="bi bi-box-seam"></i> Produtos Mais Disponíveis</h5>
+              <a href="{% url 'usuario_estoques' %}" class="btn btn-sm btn-outline-light">Ver Estoques</a>
+            </div>
+            <div class="card-body">
+              {% if produtos_disponiveis %}
+                {% for item in produtos_disponiveis|slice:':5' %}
+                <div class="d-flex justify-content-between align-items-center mb-3 {% if not forloop.last %}border-bottom pb-3{% endif %}">
+                  <div>
+                    <h6 class="mb-1">{{ item.produto__nome|truncatechars:25 }}</h6>
+                    <small class="text-muted">{{ item.local__nome }} • {{ item.local__estoque__nome }}</small>
+                  </div>
+                  <span class="badge bg-success fs-6">{{ item.quantidade_total }}</span>
+                </div>
                 {% endfor %}
-              </div>
+              {% else %}
+                <div class="text-center py-4">
+                  <i class="bi bi-box text-muted"></i>
+                  <p class="text-muted mb-0">Nenhum produto disponível no momento.</p>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Seção Secundária: Produtos e Fornecedores -->
+      <div class="row mt-4">
+        <div class="col-md-6 mb-4">
+          <div class="card h-100" style="border: 1px solid #083D77;">
+            <div class="card-header text-white d-flex justify-content-between align-items-center" style="background-color: #083D77;">
+              <h5 class="mb-0"><i class="bi bi-archive"></i> Produtos Recentes</h5>
+              <a href="{% url 'usuario_estoques' %}" class="btn btn-sm btn-outline-light">Ver Estoques</a>
+            </div>
+            <div class="card-body">
+              {% if produtos %}
+                {% for produto in produtos|slice:':4' %}
+                <div class="d-flex align-items-center mb-3 {% if not forloop.last %}border-bottom pb-3{% endif %}">
+                  <div class="me-3">
+                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                      <i class="bi bi-gear text-muted"></i>
+                    </div>
+                  </div>
+                  <div class="flex-grow-1">
+                    <h6 class="mb-1">{{ produto.nome|truncatechars:30 }}</h6>
+                    <small class="text-muted">{{ produto.codigo }}</small>
+                    {% if produto.fornecedor %}
+                      <br><small class="text-info">{{ produto.fornecedor.nome }}</small>
+                    {% endif %}
+                  </div>
+                </div>
+                {% endfor %}
+              {% else %}
+                <div class="text-center py-4">
+                  <i class="bi bi-gear text-muted"></i>
+                  <p class="text-muted mb-0">Nenhum produto cadastrado.</p>
+                </div>
+              {% endif %}
             </div>
           </div>
         </div>
         <div class="col-md-6 mb-4">
           <div class="card h-100" style="border: 1px solid #083D77;">
-            <div class="card-header text-white" style="background-color: #083D77;">Fornecedores</div>
+            <div class="card-header text-white" style="background-color: #083D77;">
+              <h5 class="mb-0"><i class="bi bi-building"></i> Fornecedores Principais</h5>
+            </div>
             <div class="card-body">
-              <div class="row">
+              {% if fornecedores %}
                 {% for fornecedor in fornecedores|slice:':4' %}
-                <div class="col-md-12 mb-3">
-                  <div class="card h-100 border-secondary" style="min-height: 160px;">
-                    <div class="card-body d-flex flex-column justify-content-center">
-                      <h6 class="card-title">{{ fornecedor.nome }}</h6>
-                      <p class="card-text mb-0">
-                        <strong>CNPJ:</strong> {{ fornecedor.cnpj }}<br>
-                        <strong>Email:</strong> {{ fornecedor.email }}<br>
-                        <strong>Telefone:</strong> {{ fornecedor.telefone }}<br>
-                        <strong>Endereço:</strong> {{ fornecedor.endereco }}<br>
-                        <span style="visibility:hidden;">preenchimento</span>
-                      </p>
+                <div class="d-flex align-items-center mb-3 {% if not forloop.last %}border-bottom pb-3{% endif %}">
+                  <div class="me-3">
+                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                      <i class="bi bi-building text-muted"></i>
                     </div>
                   </div>
+                  <div class="flex-grow-1">
+                    <h6 class="mb-1">{{ fornecedor.nome|truncatechars:30 }}</h6>
+                    <small class="text-muted">{{ fornecedor.email }}</small>
+                    {% if fornecedor.endereco %}
+                      <br><small class="text-info">{{ fornecedor.endereco.cidade }}, {{ fornecedor.endereco.estado }}</small>
+                    {% endif %}
+                  </div>
                 </div>
-                {% empty %}
-                <div class="col-12">Nenhum fornecedor cadastrado.</div>
                 {% endfor %}
-              </div>
+              {% else %}
+                <div class="text-center py-4">
+                  <i class="bi bi-building text-muted"></i>
+                  <p class="text-muted mb-0">Nenhum fornecedor cadastrado.</p>
+                </div>
+              {% endif %}
             </div>
           </div>
         </div>

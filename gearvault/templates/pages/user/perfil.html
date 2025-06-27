@@ -30,10 +30,10 @@
                             </div>
                             </div>
                             
-                            <!-- Configurações de Email SMTP -->
+                            <!-- Informações Adicionais do Usuário -->
                             <div class="card mb-4" style="border: 1px solid #083D77;">
                                 <div class="card-header text-white" style="background-color: #083D77;">
-                                    <h5 class="mb-0"><i class="bi bi-envelope-gear"></i> Configurações de Email</h5>
+                                    <h5 class="mb-0"><i class="bi bi-person-badge"></i> Informações da Conta</h5>
                                 </div>
                                 <div class="card-body">
                                     {% if messages %}
@@ -45,68 +45,60 @@
                                     {% endfor %}
                                     {% endif %}
                                     
-                                    <div class="alert alert-info" role="alert">
-                                        <i class="bi bi-info-circle"></i>
-                                        <strong>Para usar o sistema de notificações:</strong> Configure sua senha de aplicativo do Gmail ou
-                                        credentials SMTP.
-                                        {% if not user.profile.can_send_email %}
-                                        <br><strong>Status:</strong> <span class="text-danger">Email não configurado</span>
-                                        {% else %}
-                                        <br><strong>Status:</strong> <span class="text-success">Email configurado</span>
-                                        {% endif %}
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <h6><strong>Data de Cadastro:</strong></h6>
+                                            <p class="text-muted">{{ user.date_joined|date:"d/m/Y H:i" }}</p>
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            <h6><strong>Último Acesso:</strong></h6>
+                                            <p class="text-muted">
+                                                {% if user.last_login %}
+                                                    {{ user.last_login|date:"d/m/Y H:i" }}
+                                                {% else %}
+                                                    Primeiro acesso
+                                                {% endif %}
+                                            </p>
+                                        </div>
+                                        <div class="col-12 mb-3">
+                                            <h6><strong>Status da Conta:</strong></h6>
+                                            <div class="d-flex gap-2">
+                                                {% if user.is_active %}
+                                                    <span class="badge bg-success"><i class="bi bi-check-circle"></i> Ativa</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Inativa</span>
+                                                {% endif %}
+                                                
+                                                {% if user.profile.can_send_email %}
+                                                    <span class="badge bg-info"><i class="bi bi-envelope-check"></i> Notificações Configuradas</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning"><i class="bi bi-envelope-exclamation"></i> Notificações Indisponíveis</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="alert alert-light border" role="alert">
+                                                <h6 class="alert-heading"><i class="bi bi-info-circle"></i> Sobre as Notificações</h6>
+                                                <p class="mb-0">
+                                                    As notificações por email são configuradas pelo administrador do sistema. 
+                                                    Você receberá emails sobre o status de suas solicitações automaticamente.
+                                                </p>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <form method="post">
-                                        {% csrf_token %}
-                                        <div class="row">
-                                            <div class="col-md-6 mb-3">
-                                                <label for="email_smtp_host" class="form-label">Servidor SMTP</label>
-                                                <input type="text" class="form-control" id="email_smtp_host" name="email_smtp_host"
-                                                    value="{{ user.profile.email_smtp_host }}" placeholder="smtp.gmail.com">
-                                                <div class="form-text">Para Gmail: smtp.gmail.com</div>
-                                            </div>
-                                            <div class="col-md-3 mb-3">
-                                                <label for="email_smtp_port" class="form-label">Porta</label>
-                                                <input type="number" class="form-control" id="email_smtp_port" name="email_smtp_port"
-                                                    value="{{ user.profile.email_smtp_port }}" placeholder="587">
-                                                <div class="form-text">TLS: 587, SSL: 465</div>
-                                            </div>                                            <div class="col-md-3 mb-3">
-                                                <div class="form-check mt-4">
-                                                    <input class="form-check-input" type="checkbox" id="email_use_tls" name="email_use_tls" {% if user.profile.email_use_tls %}checked{% endif %}>
-                                                    <label class="form-check-label" for="email_use_tls">
-                                                        Usar TLS
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-md-12 mb-3">
-                                                <label for="email_smtp_password" class="form-label">Senha do Email/Senha de Aplicativo</label>
-                                                <input type="password" class="form-control" id="email_smtp_password" name="email_smtp_password"
-                                                    placeholder="Digite sua senha de aplicativo do Gmail">
-                                                <div class="form-text">
-                                                    <strong>Gmail:</strong> Use uma senha de aplicativo.
-                                                    <a href="https://support.google.com/accounts/answer/185833" target="_blank" rel="noopener">Como
-                                                        criar?</a>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="bi bi-save"></i> Salvar Configurações
-                                        </button>
-                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-<style>
-    #painel-content {
-        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    #sidebar-panel {
-        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), display 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-</style>
-<script src="{% static 'painel-content-resize.js' %}"></script>
-{% endblock %}
+                <style>
+                    #painel-content {
+                        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    }
+                
+                    #sidebar-panel {
+                        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), display 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    }
+                </style>
+                <script src="{% static 'painel-content-resize.js' %}"></script>
+                {% endblock %}
