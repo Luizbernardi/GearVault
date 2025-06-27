@@ -68,11 +68,17 @@ def admin_painel(request):
         total=Sum(F('quantidade') * F('valor_unitario'),
                   output_field=FloatField())
     )['total'] or 0
-    compras = Compra.objects.all()
+    compras = Compra.objects.all().order_by('-data')
     estoques = Estoque.objects.prefetch_related('locais', 'compras')
     fornecedores = Fornecedor.objects.all()
     movimentacoes = ItemCompra.objects.select_related(
         'produto', 'local', 'compra', 'compra__estoque').order_by('-id')[:5]
+    
+    # Buscar solicitações pendentes para administradores
+    from .models import SolicitacaoProduto
+    solicitacoes_pendentes = SolicitacaoProduto.objects.filter(
+        status='PENDENTE'
+    ).select_related('produto', 'local', 'usuario').order_by('-data_solicitacao')[:5]
 
     contexto = {
         'sidebar_links': get_sidebar_links(request.user),
@@ -84,6 +90,7 @@ def admin_painel(request):
         'estoques': estoques,
         'fornecedores': fornecedores,
         'movimentacoes': movimentacoes,
+        'solicitacoes_pendentes': solicitacoes_pendentes,
     }
     return render(request, 'pages/admin/painel.html', contexto)
 
