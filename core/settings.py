@@ -20,12 +20,31 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-=c15g3am!_%_)8@w%za_lcg)-0+n*f%ck7!zvm_1(&wd(+akry'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-=c15g3am!_%_)8@w%za_lcg)-0+n*f%ck7!zvm_1(&wd(+akry')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    '*',
+    'gearvault.fly.dev',
+    'localhost',
+    '127.0.0.1',
+]
+
+# CSRF Settings for production
+CSRF_TRUSTED_ORIGINS = [
+    'https://gearvault.fly.dev',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+]
+
+# Security settings for production
+if not DEBUG:
+    SECURE_SSL_REDIRECT = False  # Fly.io handles SSL
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
 
 
 # Application definition
