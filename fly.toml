@@ -1,0 +1,33 @@
+# fly.toml app configuration file generated for gearvault on 2025-06-28T16:14:27-03:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'gearvault'
+primary_region = 'gru'
+console_command = '/code/manage.py shell'
+
+[build]
+
+[processes]
+  app = "gunicorn core.wsgi --bind :8000 --workers 2"
+
+[env]
+  PORT = '8000'
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+
+[[statics]]
+  guest_path = '/code/static'
+  url_prefix = '/static/'
