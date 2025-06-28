@@ -5,7 +5,12 @@
   Login
 {% endblock %}
 {% block content %}
-  <div class="vh-100 d-flex justify-content-end align-items-center" style="background-image: url('{% static 'assets/planoDeFundoHome.png' %}'); background-size: cover; background-repeat: no-repeat;">
+  <div class="vh-100 d-flex">
+    <!-- Área da imagem (lado esquerdo) -->
+    <div class="flex-fill d-flex justify-content-center align-items-center" style="background-image: url('{% static 'assets/planoDeFundoHome.png' %}'); background-size: cover; background-repeat: no-repeat; background-position: center;">
+    </div>
+    
+    <!-- Área do formulário (lado direito) -->
     <div class="card rounded-0" style="width: 100%; max-width: 500px; height: 100%; background-color: #f8f9fa;">
       <div class="text-center">
         <h4 class="my-4">Login</h4>
