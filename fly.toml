@@ -9,6 +9,9 @@ console_command = '/code/manage.py shell'
 
 [build]
 
+[deploy]
+  release_command = "python manage.py migrate"
+
 [processes]
   app = "gunicorn core.wsgi --bind :8000 --workers 2"
 

@@ -1,6 +1,12 @@
-ARG PYTHON_VERSION=3.12-slim
+ARG PYTHON_VERSICOPY . /code
 
-FROM python:${PYTHON_VERSION}
+ENV SECRET_KEY "MaOkwTU3Ec2QkEqU6kSoYeeiSvCbOrL4eBU0JdwEOCdFod5POe"
+ENV DEBUG "False"
+RUN python manage.py collectstatic --noinput
+
+EXPOSE 8000
+
+CMD ["gunicorn","--bind",":8000","--workers","2","core.wsgi"]FROM python:${PYTHON_VERSION}
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
@@ -16,10 +22,15 @@ RUN set -ex && \
     rm -rf /root/.cache/
 COPY . /code
 
+# Tornar o script executável
+RUN chmod +x /code/start.sh
+
 ENV SECRET_KEY "MaOkwTU3Ec2QkEqU6kSoYeeiSvCbOrL4eBU0JdwEOCdFod5POe"
 ENV DEBUG "False"
 RUN python manage.py collectstatic --noinput
 
 EXPOSE 8000
 
+# Usar o script de inicialização
+ENTRYPOINT ["/code/start.sh"]
 CMD ["gunicorn","--bind",":8000","--workers","2","core.wsgi"]
