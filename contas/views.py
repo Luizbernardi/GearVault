@@ -52,9 +52,8 @@ def register(request):
         email = request.POST.get('email')
         senha = request.POST.get('password')
         confirmar_senha = request.POST.get('password_confirm')
-        role = request.POST.get('role')
 
-        if not usuario or not email or not senha or not confirmar_senha or not role:
+        if not usuario or not email or not senha or not confirmar_senha:
             return render(request, 'register.html', {'error_message': "Todos os campos são obrigatórios."})
 
         if senha != confirmar_senha:
@@ -64,9 +63,10 @@ def register(request):
             novo_usuario = User.objects.create_user(username=usuario, email=email, password=senha)
             
             profile = Profile.objects.get(user=novo_usuario)
-            profile.role = role
+            profile.role = 'USUARIO'  # Sempre criar como USUARIO
             profile.save()
 
+            messages.success(request, 'Conta criada com sucesso! Faça login para continuar.')
             return redirect('login')
         except Exception as e:
             return render(request, 'register.html', {'error_message': f"Erro ao registrar: {str(e)}"})

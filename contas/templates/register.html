@@ -35,14 +35,6 @@
             <label for="password_confirm" class="form-label">Confirme a Senha</label>
             <input type="password" class="form-control" id="password_confirm" name="password_confirm" placeholder="Confirme sua senha" required />
           </div>
-          <div class="mb-3">
-            <label for="role" class="form-label">Perfil</label>
-            <select class="form-select" id="role" name="role" required>
-              <option value="" disabled selected>Selecione seu perfil</option>
-              <option value="USUARIO">Usuário</option>
-              <option value="ADMIN">Admin</option>
-            </select>
-          </div>
           {% if error_message %}
             <div class="alert alert-danger text-center" role="alert">{{ error_message }}</div>
           {% endif %}
