@@ -106,6 +106,10 @@ class ItemCompra(models.Model):
     quantidade = models.PositiveIntegerField()
     valor_unitario = models.DecimalField(max_digits=10, decimal_places=2)
 
+    @property
+    def subtotal(self):
+        return self.quantidade * self.valor_unitario
+
     def __str__(self):
         return f"{self.produto.nome} x {self.quantidade} em {self.local.nome}"
 

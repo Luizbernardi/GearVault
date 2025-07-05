@@ -9,8 +9,10 @@ urlpatterns = [
     path('estoques/', views.admin_estoque_list, name='admin_estoque_list'),
     path('locais/', views.admin_local_list, name='admin_local_list'),
     path('compradores/', views.admin_comprador_list, name='admin_comprador_list'),
+    path('compradores/<int:comprador_id>/compras/', views.admin_comprador_compras, name='admin_comprador_compras'),
     path('compras/', views.admin_compra_list, name='admin_compra_list'),
     path('compras/<int:compra_id>/detalhes/', views.admin_compra_detalhes, name='admin_compra_detalhes'),
+    path('compras/<int:compra_id>/', views.admin_compra_detalhes_pagina, name='admin_compra_detalhes_pagina'),
     # Solicitações de produtos
     path('solicitacoes/', views.admin_solicitacoes, name='admin_solicitacoes'),
     path('solicitacoes/<int:solicitacao_id>/processar/',

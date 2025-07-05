@@ -91,14 +91,11 @@
                     title="Excluir">
                     <i class="bi bi-trash"></i>
                   </button>
-                  <button class="btn btn-sm rounded-circle d-inline-flex align-items-center justify-content-center text-white"
+                  <a href="{% url 'admin_compra_detalhes_pagina' compra.id %}" class="btn btn-sm rounded-circle d-inline-flex align-items-center justify-content-center text-white"
                     style="width: 36px; height: 36px; background-color: #28a745;"
-                    data-bs-toggle="modal"
-                    data-bs-target="#detalhesCompraModal"
-                    data-compra-id="{{ compra.id }}"
                     title="Ver Detalhes">
                     <i class="bi bi-eye"></i>
-                  </button>
+                  </a>
                 </div>
                </td>
               </tr>
@@ -324,24 +321,6 @@
           <button type="submit" class="btn text-white" style="background-color: #c5172e;" name="delete-compra">Excluir</button>
         </div>
       </form>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Detalhes da Compra -->
-<div class="modal fade" id="detalhesCompraModal" tabindex="-1" aria-labelledby="detalhesCompraModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl">
-    <div class="modal-content">
-      <div class="modal-header" style="background-color: #083D77;">
-        <h5 class="modal-title text-white" id="detalhesCompraModalLabel">Detalhes da Compra</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body" id="detalhes-compra-content">
-        <!-- Conteúdo será carregado via JavaScript -->
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
-      </div>
     </div>
   </div>
 </div>

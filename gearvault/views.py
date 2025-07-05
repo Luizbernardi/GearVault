@@ -1253,6 +1253,90 @@ def admin_compra_detalhes(request, compra_id):
         })
 
 
+@login_required
+def admin_compra_detalhes_pagina(request, compra_id):
+    """Página HTML para exibir detalhes completos de uma compra"""
+    if not request.user.is_authenticated or getattr(request.user.profile, 'role', None) != 'ADMIN':
+        return redirect('login')
+    
+    try:
+        compra = Compra.objects.select_related(
+            'estoque', 'fornecedor', 'fornecedor__endereco', 'comprador', 'comprador__user'
+        ).prefetch_related(
+            'itens__produto', 'itens__local'
+        ).get(id=compra_id)
+        
+        context = {
+            'sidebar_links': get_sidebar_links(request.user),
+            'compra': compra,
+        }
+        
+        return render(request, 'pages/admin/compra_detalhes.html', context)
+        
+    except Compra.DoesNotExist:
+        messages.error(request, 'Compra não encontrada.')
+        return redirect('admin_compra_list')
+
+
+@login_required
+def admin_comprador_compras(request, comprador_id):
+    """API endpoint para buscar compras de um comprador específico via AJAX"""
+    if not request.user.is_authenticated or getattr(request.user.profile, 'role', None) != 'ADMIN':
+        return JsonResponse({'success': False, 'error': 'Acesso negado'})
+    
+    try:
+        print(f"Buscando compras para comprador ID: {comprador_id}")
+        comprador = Comprador.objects.select_related('user').get(id=comprador_id)
+        print(f"Comprador encontrado: {comprador.user.username}")
+        
+        # Buscar compras do comprador
+        compras = Compra.objects.filter(comprador=comprador).select_related(
+            'estoque', 'fornecedor'
+        ).prefetch_related('itens').order_by('-data')
+        
+        print(f"Compras encontradas: {compras.count()}")
+        
+        # Buscar estoques únicos das compras para o filtro
+        estoques = Estoque.objects.filter(compras__comprador=comprador).distinct().order_by('nome')
+        
+        # Serializar dados das compras
+        compras_data = []
+        for compra in compras:
+            compras_data.append({
+                'id': compra.id,
+                'data': compra.data.strftime('%Y-%m-%d'),
+                'fornecedor': compra.fornecedor.nome,
+                'estoque': compra.estoque.nome,
+                'estoque_id': compra.estoque.id,
+                'valor_total': float(compra.valor_total),
+            })
+        
+        # Serializar dados dos estoques
+        estoques_data = []
+        for estoque in estoques:
+            estoques_data.append({
+                'id': estoque.id,
+                'nome': estoque.nome,
+            })
+        
+        response_data = {
+            'success': True,
+            'compras': compras_data,
+            'estoques': estoques_data,
+            'comprador_nome': comprador.user.get_full_name() or comprador.user.username
+        }
+        
+        print(f"Retornando: {len(compras_data)} compras e {len(estoques_data)} estoques")
+        return JsonResponse(response_data)
+        
+    except Comprador.DoesNotExist:
+        print(f"Comprador não encontrado: {comprador_id}")
+        return JsonResponse({'success': False, 'error': 'Comprador não encontrado'})
+    except Exception as e:
+        print(f"Erro: {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
 def get_sidebar_links(user):
     role = getattr(user.profile, 'role', None)
     if role == 'ADMIN':
