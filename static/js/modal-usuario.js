@@ -1,4 +1,4 @@
-// modal-usuario.js
+// js/modal-usuario.js
 
 document.addEventListener('DOMContentLoaded', function () {
   var editarUsuarioModal = document.getElementById('editarUsuarioModal');

@@ -1,4 +1,4 @@
-// modal-fornecedor.js
+// js/modal-fornecedor.js
 
 document.addEventListener('DOMContentLoaded', function () {
   var editarFornecedorModal = document.getElementById('editarFornecedorModal');

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
-from .models import Produto, Fornecedor, Compra, ItemCompra, Estoque, LocalArmazenamento, Endereco
+from .models import Produto, Fornecedor, Compra, ItemCompra, Estoque, LocalArmazenamento, Endereco, Comprador
 from django.contrib.auth.decorators import login_required
-from django.db.models import Sum, F, FloatField
+from django.db.models import Sum, F, FloatField, Count
 from django.contrib.auth.models import User
 from contas.models import Profile
 from django.core.paginator import Paginator
@@ -784,13 +784,443 @@ Você pode verificar suas solicitações em: {request.build_absolute_uri('/usuar
         return redirect('admin_solicitacoes')
 
 
+@login_required
+def admin_compra_list(request):
+    if not request.user.is_authenticated or getattr(request.user.profile, 'role', None) != 'ADMIN':
+        return redirect('login')
+
+    per_page = int(request.GET.get('per_page', 10))
+
+    # Adicionar compra
+    if request.method == 'POST' and 'add-compra' in request.POST:
+        estoque_id = request.POST.get('add-estoque')
+        fornecedor_id = request.POST.get('add-fornecedor')
+        comprador_id = request.POST.get('add-comprador')
+        invoice = request.FILES.get('add-invoice')
+        
+        # Itens da compra
+        produtos_ids = request.POST.getlist('produto_id[]')
+        locais_ids = request.POST.getlist('local_id[]')
+        quantidades = request.POST.getlist('quantidade[]')
+        valores_unitarios = request.POST.getlist('valor_unitario[]')
+        
+        if estoque_id and fornecedor_id and comprador_id:
+            try:
+                with transaction.atomic():
+                    # Buscar objetos
+                    estoque = Estoque.objects.get(id=estoque_id)
+                    fornecedor = Fornecedor.objects.get(id=fornecedor_id)
+                    comprador = Comprador.objects.get(id=comprador_id)
+                    
+                    # Criar compra
+                    compra = Compra.objects.create(
+                        estoque=estoque,
+                        fornecedor=fornecedor,
+                        comprador=comprador,
+                        invoice=invoice
+                    )
+                    
+                    # Criar itens da compra
+                    for i in range(len(produtos_ids)):
+                        if produtos_ids[i] and locais_ids[i] and quantidades[i] and valores_unitarios[i]:
+                            produto = Produto.objects.get(id=produtos_ids[i])
+                            local = LocalArmazenamento.objects.get(id=locais_ids[i])
+                            
+                            ItemCompra.objects.create(
+                                compra=compra,
+                                produto=produto,
+                                local=local,
+                                quantidade=int(quantidades[i]),
+                                valor_unitario=float(valores_unitarios[i])
+                            )
+                    
+                    messages.success(request, 'Compra cadastrada com sucesso!')
+            except Exception as e:
+                messages.error(request, f'Erro ao cadastrar compra: {str(e)}')
+        else:
+            messages.error(request, 'Preencha todos os campos obrigatórios.')
+        return redirect('admin_compra_list')
+
+    # Editar compra
+    if request.method == 'POST' and 'edit-compra' in request.POST:
+        compra_id = request.POST.get('compra_id')
+        estoque_id = request.POST.get('edit-estoque')
+        fornecedor_id = request.POST.get('edit-fornecedor')
+        comprador_id = request.POST.get('edit-comprador')
+        invoice = request.FILES.get('edit-invoice')
+        
+        try:
+            compra = Compra.objects.get(id=compra_id)
+            compra.estoque = Estoque.objects.get(id=estoque_id)
+            compra.fornecedor = Fornecedor.objects.get(id=fornecedor_id)
+            compra.comprador = Comprador.objects.get(id=comprador_id)
+            if invoice:
+                compra.invoice = invoice
+            compra.save()
+            messages.success(request, 'Compra editada com sucesso!')
+        except Exception as e:
+            messages.error(request, f'Erro ao editar compra: {str(e)}')
+        return redirect('admin_compra_list')
+
+    # Excluir compra
+    if request.method == 'POST' and 'delete-compra' in request.POST:
+        compra_id = request.POST.get('compra_id')
+        try:
+            compra = Compra.objects.get(id=compra_id)
+            compra.delete()
+            messages.success(request, 'Compra excluída com sucesso!')
+        except Exception as e:
+            messages.error(request, f'Erro ao excluir compra: {str(e)}')
+        return redirect('admin_compra_list')
+
+    # Listar compras
+    compras = Compra.objects.select_related('estoque', 'fornecedor', 'comprador', 'comprador__user').prefetch_related('itens__produto', 'itens__local').order_by('-data')
+    paginator = Paginator(compras, per_page)
+    page_number = request.GET.get('page')
+    compras_page = paginator.get_page(page_number)
+
+    # Dados para os formulários
+    estoques = Estoque.objects.all()
+    fornecedores = Fornecedor.objects.all()
+    compradores = Comprador.objects.select_related('user').all()
+    produtos = Produto.objects.all()
+    locais = LocalArmazenamento.objects.select_related('estoque').all()
+
+    context = {
+        'sidebar_links': get_sidebar_links(request.user),
+        'compras': compras_page,
+        'estoques': estoques,
+        'fornecedores': fornecedores,
+        'compradores': compradores,
+        'produtos': produtos,
+        'locais': locais,
+    }
+    
+    return render(request, 'pages/admin/compra_list.html', context)
+
+
+@login_required
+def admin_estoque_list(request):
+    if not request.user.is_authenticated or getattr(request.user.profile, 'role', None) != 'ADMIN':
+        return redirect('login')
+
+    per_page = int(request.GET.get('per_page', 10))
+
+    # Adicionar estoque
+    if request.method == 'POST' and 'add-estoque' in request.POST:
+        nome = request.POST.get('add-nome')
+        descricao = request.POST.get('add-descricao')
+        
+        if nome:
+            try:
+                Estoque.objects.create(
+                    nome=nome,
+                    descricao=descricao
+                )
+                messages.success(request, 'Estoque cadastrado com sucesso!')
+            except Exception as e:
+                messages.error(request, f'Erro ao cadastrar estoque: {str(e)}')
+        else:
+            messages.error(request, 'Preencha todos os campos obrigatórios.')
+        return redirect('admin_estoque_list')
+
+    # Editar estoque
+    if request.method == 'POST' and 'edit-estoque' in request.POST:
+        estoque_id = request.POST.get('estoque_id')
+        nome = request.POST.get('nome')
+        descricao = request.POST.get('descricao')
+        
+        try:
+            estoque = Estoque.objects.get(id=estoque_id)
+            estoque.nome = nome
+            estoque.descricao = descricao
+            estoque.save()
+            messages.success(request, 'Estoque editado com sucesso!')
+        except Exception as e:
+            messages.error(request, f'Erro ao editar estoque: {str(e)}')
+        return redirect('admin_estoque_list')
+
+    # Excluir estoque
+    if request.method == 'POST' and 'delete-estoque' in request.POST:
+        estoque_id = request.POST.get('estoque_id')
+        try:
+            estoque = Estoque.objects.get(id=estoque_id)
+            estoque.delete()
+            messages.success(request, 'Estoque excluído com sucesso!')
+        except Exception as e:
+            messages.error(request, f'Erro ao excluir estoque: {str(e)}')
+        return redirect('admin_estoque_list')
+
+    # Listar estoques com estatísticas
+    estoques = Estoque.objects.annotate(
+        total_locais=Count('locais', distinct=True)
+    ).order_by('nome')
+    
+    # Calcular total de itens para cada estoque
+    for estoque in estoques:
+        total_itens = ItemCompra.objects.filter(
+            local__estoque=estoque
+        ).aggregate(total=Sum('quantidade'))['total'] or 0
+        estoque.total_itens = total_itens
+
+    paginator = Paginator(estoques, per_page)
+    page_number = request.GET.get('page')
+    estoques_page = paginator.get_page(page_number)
+
+    context = {
+        'sidebar_links': get_sidebar_links(request.user),
+        'estoques': estoques_page,
+    }
+    
+    return render(request, 'pages/admin/estoque_list.html', context)
+
+
+@login_required
+def admin_local_list(request):
+    if not request.user.is_authenticated or getattr(request.user.profile, 'role', None) != 'ADMIN':
+        return redirect('login')
+
+    per_page = int(request.GET.get('per_page', 10))
+
+    # Adicionar local
+    if request.method == 'POST' and 'add-local' in request.POST:
+        nome = request.POST.get('add-nome')
+        descricao = request.POST.get('add-descricao')
+        estoque_id = request.POST.get('add-estoque')
+        
+        if nome and estoque_id:
+            try:
+                estoque = Estoque.objects.get(id=estoque_id)
+                LocalArmazenamento.objects.create(
+                    nome=nome,
+                    descricao=descricao,
+                    estoque=estoque
+                )
+                messages.success(request, 'Local de armazenamento cadastrado com sucesso!')
+            except Exception as e:
+                messages.error(request, f'Erro ao cadastrar local: {str(e)}')
+        else:
+            messages.error(request, 'Preencha todos os campos obrigatórios.')
+        return redirect('admin_local_list')
+
+    # Editar local
+    if request.method == 'POST' and 'edit-local' in request.POST:
+        local_id = request.POST.get('local_id')
+        nome = request.POST.get('nome')
+        descricao = request.POST.get('descricao')
+        estoque_id = request.POST.get('estoque')
+        
+        try:
+            local = LocalArmazenamento.objects.get(id=local_id)
+            estoque = Estoque.objects.get(id=estoque_id)
+            local.nome = nome
+            local.descricao = descricao
+            local.estoque = estoque
+            local.save()
+            messages.success(request, 'Local editado com sucesso!')
+        except Exception as e:
+            messages.error(request, f'Erro ao editar local: {str(e)}')
+        return redirect('admin_local_list')
+
+    # Excluir local
+    if request.method == 'POST' and 'delete-local' in request.POST:
+        local_id = request.POST.get('local_id')
+        try:
+            local = LocalArmazenamento.objects.get(id=local_id)
+            local.delete()
+            messages.success(request, 'Local excluído com sucesso!')
+        except Exception as e:
+            messages.error(request, f'Erro ao excluir local: {str(e)}')
+        return redirect('admin_local_list')
+
+    # Listar locais
+    locais = LocalArmazenamento.objects.select_related('estoque').order_by('estoque__nome', 'nome')
+    
+    # Calcular total de itens para cada local
+    for local in locais:
+        total_itens = ItemCompra.objects.filter(
+            local=local
+        ).aggregate(total=Sum('quantidade'))['total'] or 0
+        local.total_itens = total_itens
+
+    paginator = Paginator(locais, per_page)
+    page_number = request.GET.get('page')
+    locais_page = paginator.get_page(page_number)
+
+    # Dados para formulários
+    estoques = Estoque.objects.all().order_by('nome')
+
+    context = {
+        'sidebar_links': get_sidebar_links(request.user),
+        'locais': locais_page,
+        'estoques': estoques,
+    }
+    
+    return render(request, 'pages/admin/local_list.html', context)
+
+
+@login_required
+def admin_endereco_list(request):
+    if not request.user.is_authenticated or getattr(request.user.profile, 'role', None) != 'ADMIN':
+        return redirect('login')
+
+    per_page = int(request.GET.get('per_page', 10))
+
+    # Adicionar endereço
+    if request.method == 'POST' and 'add-endereco' in request.POST:
+        logradouro = request.POST.get('add-logradouro')
+        numero = request.POST.get('add-numero')
+        complemento = request.POST.get('add-complemento')
+        bairro = request.POST.get('add-bairro')
+        cidade = request.POST.get('add-cidade')
+        estado = request.POST.get('add-estado')
+        cep = request.POST.get('add-cep')
+        
+        if logradouro and numero and bairro and cidade and estado and cep:
+            try:
+                Endereco.objects.create(
+                    logradouro=logradouro,
+                    numero=numero,
+                    complemento=complemento,
+                    bairro=bairro,
+                    cidade=cidade,
+                    estado=estado,
+                    cep=cep
+                )
+                messages.success(request, 'Endereço cadastrado com sucesso!')
+            except Exception as e:
+                messages.error(request, f'Erro ao cadastrar endereço: {str(e)}')
+        else:
+            messages.error(request, 'Preencha todos os campos obrigatórios.')
+        return redirect('admin_endereco_list')
+
+    # Editar endereço
+    if request.method == 'POST' and 'edit-endereco' in request.POST:
+        endereco_id = request.POST.get('endereco_id')
+        logradouro = request.POST.get('logradouro')
+        numero = request.POST.get('numero')
+        complemento = request.POST.get('complemento')
+        bairro = request.POST.get('bairro')
+        cidade = request.POST.get('cidade')
+        estado = request.POST.get('estado')
+        cep = request.POST.get('cep')
+        
+        try:
+            endereco = Endereco.objects.get(id=endereco_id)
+            endereco.logradouro = logradouro
+            endereco.numero = numero
+            endereco.complemento = complemento
+            endereco.bairro = bairro
+            endereco.cidade = cidade
+            endereco.estado = estado
+            endereco.cep = cep
+            endereco.save()
+            messages.success(request, 'Endereço editado com sucesso!')
+        except Exception as e:
+            messages.error(request, f'Erro ao editar endereço: {str(e)}')
+        return redirect('admin_endereco_list')
+
+    # Excluir endereço
+    if request.method == 'POST' and 'delete-endereco' in request.POST:
+        endereco_id = request.POST.get('endereco_id')
+        try:
+            endereco = Endereco.objects.get(id=endereco_id)
+            endereco.delete()
+            messages.success(request, 'Endereço excluído com sucesso!')
+        except Exception as e:
+            messages.error(request, f'Erro ao excluir endereço: {str(e)}')
+        return redirect('admin_endereco_list')
+
+    # Listar endereços
+    enderecos = Endereco.objects.all().order_by('cidade', 'bairro', 'logradouro')
+
+    paginator = Paginator(enderecos, per_page)
+    page_number = request.GET.get('page')
+    enderecos_page = paginator.get_page(page_number)
+
+    context = {
+        'sidebar_links': get_sidebar_links(request.user),
+        'enderecos': enderecos_page,
+    }
+    
+    return render(request, 'pages/admin/endereco_list.html', context)
+
+
+@login_required
+def admin_comprador_list(request):
+    if not request.user.is_authenticated or getattr(request.user.profile, 'role', None) != 'ADMIN':
+        return redirect('login')
+
+    per_page = int(request.GET.get('per_page', 10))
+
+    # Adicionar comprador
+    if request.method == 'POST' and 'add-comprador' in request.POST:
+        user_id = request.POST.get('add-user')
+        
+        if user_id:
+            try:
+                user = User.objects.get(id=user_id)
+                # Verificar se já existe um comprador para este usuário
+                if not Comprador.objects.filter(user=user).exists():
+                    Comprador.objects.create(user=user)
+                    messages.success(request, 'Comprador cadastrado com sucesso!')
+                else:
+                    messages.error(request, 'Já existe um comprador vinculado a este usuário.')
+            except Exception as e:
+                messages.error(request, f'Erro ao cadastrar comprador: {str(e)}')
+        else:
+            messages.error(request, 'Selecione um usuário.')
+        return redirect('admin_comprador_list')
+
+    # Excluir comprador
+    if request.method == 'POST' and 'delete-comprador' in request.POST:
+        comprador_id = request.POST.get('comprador_id')
+        try:
+            comprador = Comprador.objects.get(id=comprador_id)
+            comprador.delete()
+            messages.success(request, 'Comprador excluído com sucesso!')
+        except Exception as e:
+            messages.error(request, f'Erro ao excluir comprador: {str(e)}')
+        return redirect('admin_comprador_list')
+
+    # Listar compradores
+    compradores = Comprador.objects.select_related('user').order_by('user__username')
+
+    # Calcular estatísticas para cada comprador
+    for comprador in compradores:
+        total_compras = Compra.objects.filter(comprador=comprador).count()
+        comprador.total_compras = total_compras
+
+    paginator = Paginator(compradores, per_page)
+    page_number = request.GET.get('page')
+    compradores_page = paginator.get_page(page_number)
+
+    # Usuários disponíveis (que não são compradores ainda)
+    usuarios_comprador_ids = Comprador.objects.values_list('user_id', flat=True)
+    usuarios_disponiveis = User.objects.exclude(id__in=usuarios_comprador_ids).order_by('username')
+
+    context = {
+        'sidebar_links': get_sidebar_links(request.user),
+        'compradores': compradores_page,
+        'usuarios_disponiveis': usuarios_disponiveis,
+    }
+    
+    return render(request, 'pages/admin/comprador_list.html', context)
+
+
 def get_sidebar_links(user):
     role = getattr(user.profile, 'role', None)
-    if role == 'ADMIN':        return [
+    if role == 'ADMIN':
+        return [
             {'url': '/administrador/painel/', 'label': 'Painel Administrador'},
             {'url': '/administrador/usuarios/', 'label': 'Gerenciar Usuários'},
             {'url': '/administrador/produtos/', 'label': 'Gerenciar Produtos'},
             {'url': '/administrador/fornecedores/', 'label': 'Gerenciar Fornecedores'},
+            {'url': '/administrador/estoques/', 'label': 'Gerenciar Estoques'},
+            {'url': '/administrador/locais/', 'label': 'Gerenciar Locais'},
+            {'url': '/administrador/enderecos/', 'label': 'Gerenciar Endereços'},
+            {'url': '/administrador/compradores/', 'label': 'Gerenciar Compradores'},
+            {'url': '/administrador/compras/', 'label': 'Gerenciar Compras'},
             {'url': '/administrador/solicitacoes/',
                 'label': 'Solicitações de Produtos'},
         ]

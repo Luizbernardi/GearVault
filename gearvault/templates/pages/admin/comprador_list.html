@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gerenciar Compradores{% endblock %}
+
+{% block content %}
+<div class="container-fluid" id="main-content-panel">
+  <div class="row">
+    <div class="col-md-2" id="sidebar-panel">
+      {% include 'sidebar.html' %}
+    </div>
+    <div class="col-md-10" id="painel-content">
+      <div class="card mt-4 mb-4" style="border: 1px solid #083D77;">
+        <div class="card-header text-white" style="background-color: #083D77;">
+          <h4 class="mb-0">Gerenciamento de Compradores</h4>
+        </div>
+        <div class="card-body">
+          {% if messages %}
+            <div aria-live="polite" aria-atomic="true" class="position-relative">
+              <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+                {% for message in messages %}
+                  <div class="toast align-items-center text-bg-{{ message.tags }} border-0 show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
+                    <div class="d-flex">
+                      <div class="toast-body">
+                        {{ message }}
+                      </div>
+                      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+            <script>
+              document.addEventListener('DOMContentLoaded', function() {
+                var toastElList = [].slice.call(document.querySelectorAll('.toast'));
+                toastElList.forEach(function (toastEl) {
+                  var toast = new bootstrap.Toast(toastEl, { delay: 5000 });
+                  toast.show();
+                });
+              });
+            </script>
+          {% endif %}
+
+          <!-- Botão para abrir modal de cadastro -->
+          <div class="d-flex justify-content-end mt-1">
+            <button class="btn text-white" style="width: 300px; height: 50px; background-color: #083D77;" data-bs-toggle="modal" data-bs-target="#adicionarCompradorModal">
+              Cadastrar Comprador
+            </button>
+          </div>
+
+          <table class="table table-striped table-bordered mt-4">
+            <thead>
+              <tr>
+                <th class="py-3 px-3">Usuário</th>
+                <th class="py-3 px-3">Nome Completo</th>
+                <th class="py-3 px-3">Email</th>
+                <th class="py-3 px-3">Total Compras</th>
+                <th class="py-3 px-3"></th>
+              </tr>
+            </thead>
+            <tbody>
+            {% for comprador in compradores %}
+              <tr>
+                <td class="py-2" style="width: 20%;">{{ comprador.user.username }}</td>
+                <td class="py-2" style="width: 30%;">{{ comprador.user.get_full_name|default:"Não informado" }}</td>
+                <td class="py-2" style="width: 30%;">{{ comprador.user.email }}</td>
+                <td class="py-2" style="width: 10%;">{{ comprador.total_compras }}</td>
+                <td class="py-2" style="width: 10%;">
+                  <div class="d-flex gap-3 justify-content-center">
+                    <button class="btn btn-sm rounded-circle d-inline-flex align-items-center justify-content-center text-white"
+                      style="width: 36px; height: 36px; background-color: #c5172e;"
+                      data-bs-toggle="modal"
+                      data-bs-target="#excluirCompradorModal"
+                      data-comprador-id="{{ comprador.id }}"
+                      data-username="{{ comprador.user.username }}"
+                      title="Remover">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="5">Nenhum comprador encontrado.</td></tr>
+            {% endfor %}
+            </tbody>
+          </table>
+
+          <div class="d-flex justify-content-center align-items-center mb-3 mt-5">
+            <nav aria-label="Navegação de página" class="d-flex justify-content-center mb-0">
+              <ul class="pagination mb-0">
+                {% if compradores.number > 1 %}
+                  <li class="page-item"><a class="page-link" href="?page=1{% if request.GET.per_page %}&per_page={{ request.GET.per_page }}{% endif %}">« Primeira</a></li>
+                {% else %}
+                  <li class="page-item disabled"><span class="page-link">« Primeira</span></li>
+                {% endif %}
+                {% if compradores.has_previous %}
+                  <li class="page-item"><a class="page-link" href="?page={{ compradores.previous_page_number }}{% if request.GET.per_page %}&per_page={{ request.GET.per_page }}{% endif %}">Anterior</a></li>
+                {% else %}
+                  <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+                {% endif %}
+                <li class="page-item disabled">
+                  <span class="page-link text-white" style="background-color: #083D77; border-color: #083D77;">
+                    Página {{ compradores.number }} de {{ compradores.paginator.num_pages }}
+                  </span>
+                </li>
+                {% if compradores.has_next %}
+                  <li class="page-item"><a class="page-link" href="?page={{ compradores.next_page_number }}{% if request.GET.per_page %}&per_page={{ request.GET.per_page }}{% endif %}">Próxima</a></li>
+                {% else %}
+                  <li class="page-item disabled"><span class="page-link">Próxima</span></li>
+                {% endif %}
+                {% if compradores.number < compradores.paginator.num_pages %}
+                  <li class="page-item"><a class="page-link" href="?page={{ compradores.paginator.num_pages }}{% if request.GET.per_page %}&per_page={{ request.GET.per_page }}{% endif %}">Última »</a></li>
+                {% else %}
+                  <li class="page-item disabled"><span class="page-link">Última »</span></li>
+                {% endif %}
+              </ul>
+            </nav>
+            <form method="get" class="d-flex align-items-center ms-3" style="gap: 0.5rem;">
+              <label for="per_page" class="mb-0">Exibir</label>
+              <select name="per_page" id="per_page" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                <option value="10" {% if compradores.paginator.per_page == 10 %}selected{% endif %}>10</option>
+                <option value="20" {% if compradores.paginator.per_page == 20 %}selected{% endif %}>20</option>
+                <option value="30" {% if compradores.paginator.per_page == 30 %}selected{% endif %}>30</option>
+              </select>
+              <span>por página</span>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Adicionar Comprador -->
+<div class="modal fade" id="adicionarCompradorModal" tabindex="-1" aria-labelledby="adicionarCompradorModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background-color: #083D77;">
+        <h5 class="modal-title text-white" id="adicionarCompradorModalLabel">Cadastrar Comprador</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" id="formAdicionarComprador">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-12 mb-3">
+              <label for="add-user" class="form-label">Usuário</label>
+              <select class="form-select" name="add-user" id="add-user" required>
+                <option value="">Selecione um usuário</option>
+                {% for usuario in usuarios_disponiveis %}
+                  <option value="{{ usuario.id }}">{{ usuario.username }} - {{ usuario.get_full_name|default:usuario.email }}</option>
+                {% endfor %}
+              </select>
+              {% if not usuarios_disponiveis %}
+                <div class="form-text text-warning">
+                  Todos os usuários já são compradores ou não há usuários cadastrados.
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn text-white" style="background-color: #083D77;" name="add-comprador" {% if not usuarios_disponiveis %}disabled{% endif %}>Cadastrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Excluir Comprador -->
+<div class="modal fade" id="excluirCompradorModal" tabindex="-1" aria-labelledby="excluirCompradorModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background-color: #083D77;">
+        <h5 class="modal-title text-white" id="excluirCompradorModalLabel">Remover Comprador</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="post" id="formExcluirComprador">
+        {% csrf_token %}
+        <div class="modal-body">
+          <input type="hidden" name="comprador_id" id="delete-comprador-id">
+          <div class="col-12 mb-3">
+            <p>Tem certeza que deseja remover <strong id="delete-comprador-username"></strong> da lista de compradores?</p>
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              Esta ação não excluirá o usuário, apenas removerá a permissão de comprador.
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn text-white" style="background-color: #c5172e;" name="delete-comprador">Remover</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  #painel-content {
+    transition: width 0.3s cubic-bezier(0.4,0,0.2,1), margin-left 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  #sidebar-panel {
+    transition: width 0.3s cubic-bezier(0.4,0,0.2,1), display 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+</style>
+
+<script src="{% static 'js/painel-content-resize.js' %}"></script>
+<script src="{% static 'js/modal-comprador.js' %}"></script>
+
+{% endblock %}

@@ -1,4 +1,4 @@
-// modal-produto.js
+// js/modal-produto.js
 // Preenche os campos dos modais de edição e exclusão de produto com os dados do botão clicado
 
 document.addEventListener('DOMContentLoaded', function() {
