@@ -11,6 +11,7 @@ urlpatterns = [
     path('enderecos/', views.admin_endereco_list, name='admin_endereco_list'),
     path('compradores/', views.admin_comprador_list, name='admin_comprador_list'),
     path('compras/', views.admin_compra_list, name='admin_compra_list'),
+    path('compras/<int:compra_id>/detalhes/', views.admin_compra_detalhes, name='admin_compra_detalhes'),
     # Solicitações de produtos
     path('solicitacoes/', views.admin_solicitacoes, name='admin_solicitacoes'),
     path('solicitacoes/<int:solicitacao_id>/processar/',

@@ -8,6 +8,7 @@ from django.core.paginator import Paginator
 from django.contrib import messages
 from django.db import transaction
 from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse
 
 
 @login_required
@@ -1208,21 +1209,85 @@ def admin_comprador_list(request):
     return render(request, 'pages/admin/comprador_list.html', context)
 
 
+@login_required
+def admin_compra_detalhes(request, compra_id):
+    """API endpoint para buscar detalhes de uma compra específica via AJAX"""
+    if not request.user.is_authenticated or getattr(request.user.profile, 'role', None) != 'ADMIN':
+        return JsonResponse({'success': False, 'error': 'Acesso negado'})
+    
+    try:
+        compra = Compra.objects.select_related(
+            'estoque', 'fornecedor', 'comprador', 'comprador__user'
+        ).prefetch_related(
+            'itens__produto', 'itens__local'
+        ).get(id=compra_id)
+        
+        # Preparar dados dos itens
+        itens_data = []
+        for item in compra.itens.all():
+            subtotal = item.quantidade * item.valor_unitario
+            itens_data.append({
+                'produto_nome': item.produto.nome,
+                'produto_codigo': item.produto.codigo,
+                'local_nome': item.local.nome,
+                'quantidade': item.quantidade,
+                'valor_unitario': float(item.valor_unitario),
+                'subtotal': float(subtotal),
+            })
+        
+        # Preparar dados da compra
+        compra_data = {
+            'id': compra.id,
+            'data': compra.data.strftime('%d/%m/%Y'),
+            'estoque': compra.estoque.nome,
+            'fornecedor': {
+                'nome': compra.fornecedor.nome,
+                'cnpj': compra.fornecedor.cnpj,
+                'email': compra.fornecedor.email,
+                'telefone': compra.fornecedor.telefone,
+            },
+            'comprador': {
+                'nome': compra.comprador.user.get_full_name() or compra.comprador.user.username,
+                'email': compra.comprador.user.email,
+            },
+            'valor_total': float(compra.valor_total),
+            'invoice_url': compra.invoice.url if compra.invoice else None,
+            'total_itens': len(itens_data),
+            'itens': itens_data,
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'compra': compra_data
+        })
+        
+    except Compra.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Compra não encontrada'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })
+
+
 def get_sidebar_links(user):
     role = getattr(user.profile, 'role', None)
     if role == 'ADMIN':
         return [
             {'url': '/administrador/painel/', 'label': 'Painel Administrador'},
-            {'url': '/administrador/usuarios/', 'label': 'Gerenciar Usuários'},
-            {'url': '/administrador/produtos/', 'label': 'Gerenciar Produtos'},
-            {'url': '/administrador/fornecedores/', 'label': 'Gerenciar Fornecedores'},
-            {'url': '/administrador/estoques/', 'label': 'Gerenciar Estoques'},
-            {'url': '/administrador/locais/', 'label': 'Gerenciar Locais'},
-            {'url': '/administrador/enderecos/', 'label': 'Gerenciar Endereços'},
-            {'url': '/administrador/compradores/', 'label': 'Gerenciar Compradores'},
-            {'url': '/administrador/compras/', 'label': 'Gerenciar Compras'},
+            {'url': '/administrador/usuarios/', 'label': 'Usuários'},
+            {'url': '/administrador/produtos/', 'label': 'Produtos'},
+            {'url': '/administrador/fornecedores/', 'label': 'Fornecedores'},
+            {'url': '/administrador/estoques/', 'label': 'Estoques'},
+            {'url': '/administrador/locais/', 'label': 'Locais'},
+            {'url': '/administrador/enderecos/', 'label': 'Endereços'},
+            {'url': '/administrador/compradores/', 'label': 'Compradores'},
+            {'url': '/administrador/compras/', 'label': 'Compras'},
             {'url': '/administrador/solicitacoes/',
-                'label': 'Solicitações de Produtos'},
+                'label': 'Solicitações'},
         ]
     elif role == 'USUARIO':
         return [

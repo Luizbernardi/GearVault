@@ -37,26 +37,152 @@ document.addEventListener('DOMContentLoaded', function() {
             const button = event.relatedTarget;
             const compraId = button.getAttribute('data-compra-id');
             
-            // Aqui você pode fazer uma requisição AJAX para buscar os detalhes da compra
-            // Por enquanto, vou deixar um placeholder
             const content = document.getElementById('detalhes-compra-content');
             content.innerHTML = `
                 <div class="text-center">
-                    <div class="spinner-border" role="status">
+                    <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Carregando...</span>
                     </div>
                     <p class="mt-2">Carregando detalhes da compra #${compraId}...</p>
                 </div>
             `;
             
-            // Simular carregamento dos detalhes
-            setTimeout(() => {
-                content.innerHTML = `
-                    <h6>Compra #${compraId}</h6>
-                    <p>Os detalhes da compra serão exibidos aqui.</p>
-                    <p>Você pode implementar uma requisição AJAX para buscar os itens da compra.</p>
-                `;
-            }, 1000);
+            // Fazer requisição AJAX para buscar os detalhes
+            fetch(`/administrador/compras/${compraId}/detalhes/`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const compra = data.compra;
+                        let itensHtml = '';
+                        
+                        compra.itens.forEach(item => {
+                            itensHtml += `
+                                <tr>
+                                    <td>${item.produto_nome}</td>
+                                    <td>${item.produto_codigo}</td>
+                                    <td>${item.local_nome}</td>
+                                    <td class="text-center">${item.quantidade}</td>
+                                    <td class="text-end">R$ ${item.valor_unitario.toFixed(2)}</td>
+                                    <td class="text-end">R$ ${item.subtotal.toFixed(2)}</td>
+                                </tr>
+                            `;
+                        });
+                        
+                        content.innerHTML = `
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-primary">Informações da Compra</h6>
+                                    <table class="table table-borderless table-sm">
+                                        <tr>
+                                            <td><strong>ID:</strong></td>
+                                            <td>#${compra.id}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Data:</strong></td>
+                                            <td>${compra.data}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Estoque:</strong></td>
+                                            <td>${compra.estoque}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Total de Itens:</strong></td>
+                                            <td>${compra.total_itens}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Valor Total:</strong></td>
+                                            <td class="text-success"><strong>R$ ${compra.valor_total.toFixed(2)}</strong></td>
+                                        </tr>
+                                        ${compra.invoice_url ? `
+                                        <tr>
+                                            <td><strong>Invoice:</strong></td>
+                                            <td><a href="${compra.invoice_url}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-file-pdf"></i> Visualizar PDF
+                                            </a></td>
+                                        </tr>
+                                        ` : ''}
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-primary">Fornecedor</h6>
+                                    <table class="table table-borderless table-sm">
+                                        <tr>
+                                            <td><strong>Nome:</strong></td>
+                                            <td>${compra.fornecedor.nome}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>CNPJ:</strong></td>
+                                            <td>${compra.fornecedor.cnpj}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Email:</strong></td>
+                                            <td>${compra.fornecedor.email}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Telefone:</strong></td>
+                                            <td>${compra.fornecedor.telefone}</td>
+                                        </tr>
+                                    </table>
+                                    
+                                    <h6 class="text-primary mt-4">Comprador</h6>
+                                    <table class="table table-borderless table-sm">
+                                        <tr>
+                                            <td><strong>Nome:</strong></td>
+                                            <td>${compra.comprador.nome}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Email:</strong></td>
+                                            <td>${compra.comprador.email}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-4">
+                            
+                            <h6 class="text-primary mb-3">Itens da Compra</h6>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Produto</th>
+                                            <th>Código</th>
+                                            <th>Local</th>
+                                            <th class="text-center">Quantidade</th>
+                                            <th class="text-end">Valor Unit.</th>
+                                            <th class="text-end">Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${itensHtml}
+                                    </tbody>
+                                    <tfoot class="table-dark">
+                                        <tr>
+                                            <th colspan="5" class="text-end">Total Geral:</th>
+                                            <th class="text-end">R$ ${compra.valor_total.toFixed(2)}</th>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        `;
+                    } else {
+                        content.innerHTML = `
+                            <div class="alert alert-danger" role="alert">
+                                <h6 class="alert-heading">Erro ao carregar detalhes</h6>
+                                <p class="mb-0">${data.error}</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    content.innerHTML = `
+                        <div class="alert alert-danger" role="alert">
+                            <h6 class="alert-heading">Erro de conexão</h6>
+                            <p class="mb-0">Não foi possível carregar os detalhes da compra. Tente novamente.</p>
+                        </div>
+                    `;
+                });
         });
     }
 
