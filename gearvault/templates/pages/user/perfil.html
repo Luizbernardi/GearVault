@@ -16,7 +16,7 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4 text-center">
-                            <img src="{% static 'assets/LogoGearvaultBranco.png' %}" alt="Avatar"
+                            <img src="{% static 'assets/fotoUser1.jpg' %}" alt="Avatar"
                                 class="img-fluid rounded-circle mb-3"
                                 style="max-width: 120px; background: #e9ecef; padding: 10px;">
                         </div>
@@ -68,21 +68,6 @@
                                                 {% else %}
                                                     <span class="badge bg-danger"><i class="bi bi-x-circle"></i> Inativa</span>
                                                 {% endif %}
-                                                
-                                                {% if user.profile.can_send_email %}
-                                                    <span class="badge bg-info"><i class="bi bi-envelope-check"></i> Notificações Configuradas</span>
-                                                {% else %}
-                                                    <span class="badge bg-warning"><i class="bi bi-envelope-exclamation"></i> Notificações Indisponíveis</span>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                        <div class="col-12">
-                                            <div class="alert alert-light border" role="alert">
-                                                <h6 class="alert-heading"><i class="bi bi-info-circle"></i> Sobre as Notificações</h6>
-                                                <p class="mb-0">
-                                                    As notificações por email são configuradas pelo administrador do sistema. 
-                                                    Você receberá emails sobre o status de suas solicitações automaticamente.
-                                                </p>
                                             </div>
                                         </div>
                                     </div>
