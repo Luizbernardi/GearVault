@@ -407,18 +407,20 @@ def admin_produto_list(request):
         nome = request.POST.get('add-nome')
         codigo = request.POST.get('add-codigo')
         categoria = request.POST.get('add-categoria')
-        preco = request.POST.get('add-preco')
         imagem = request.FILES.get('add-imagem')
         descricao = request.POST.get('add-descricao')
-        if nome and codigo and categoria and preco is not None:
+        fornecedor_id = request.POST.get('add-fornecedor')
+        
+        if nome and codigo:
             try:
+                fornecedor = Fornecedor.objects.filter(id=fornecedor_id).first() if fornecedor_id else None
                 Produto.objects.create(
                     nome=nome,
                     codigo=codigo,
                     categoria=categoria,
-                    preco=preco,
                     imagem=imagem,
                     descricao=descricao,
+                    fornecedor=fornecedor,
                 )
                 messages.success(request, 'Produto cadastrado com sucesso!')
             except Exception as e:
@@ -428,12 +430,11 @@ def admin_produto_list(request):
         return redirect('admin_produto_list')
 
     # Edição de produto
-    if request.method == 'POST' and 'produto_id' in request.POST and 'nome' in request.POST and 'codigo' in request.POST and 'categoria' in request.POST and 'preco' in request.POST:
+    if request.method == 'POST' and 'produto_id' in request.POST and 'nome' in request.POST and 'codigo' in request.POST:
         produto_id = request.POST.get('produto_id')
         nome = request.POST.get('nome')
         codigo = request.POST.get('codigo')
         categoria = request.POST.get('categoria')
-        preco = request.POST.get('preco')
         imagem = request.FILES.get('imagem')
         descricao = request.POST.get('descricao')
         fornecedor_id = request.POST.get('fornecedor')
@@ -443,7 +444,6 @@ def admin_produto_list(request):
             produto.nome = nome
             produto.codigo = codigo
             produto.categoria = categoria
-            produto.preco = preco
             if imagem:
                 produto.imagem = imagem
             produto.descricao = descricao

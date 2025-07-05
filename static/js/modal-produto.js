@@ -10,9 +10,9 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('edit-produto-id').value = button.getAttribute('data-produto-id');
       document.getElementById('edit-nome').value = button.getAttribute('data-nome');
       document.getElementById('edit-codigo').value = button.getAttribute('data-codigo');
-      document.getElementById('edit-categoria').value = button.getAttribute('data-categoria');
-      document.getElementById('edit-preco').value = button.getAttribute('data-preco');
+      document.getElementById('edit-categoria').value = button.getAttribute('data-categoria') || '';
       document.getElementById('edit-descricao').value = button.getAttribute('data-descricao') || '';
+      document.getElementById('edit-fornecedor').value = button.getAttribute('data-fornecedor-id') || '';
       // Não preenche imagem, pois não é possível por segurança
     });
   }
