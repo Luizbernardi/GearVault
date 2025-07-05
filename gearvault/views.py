@@ -310,29 +310,40 @@ def admin_fornecedor_list(request):
         cnpj = request.POST.get('add-cnpj')
         email = request.POST.get('add-email')
         telefone = request.POST.get('add-telefone')
-        endereco_id = request.POST.get('add-endereco')
+        
+        # Verificar se foi selecionado um endereço existente ou se criará um novo
+        endereco_existente_id = request.POST.get('add-endereco-existente')
+        
         # Campos do novo endereço
-        novo_logradouro = request.POST.get('novo-logradouro')
-        novo_numero = request.POST.get('novo-numero')
-        novo_bairro = request.POST.get('novo-bairro')
-        novo_cidade = request.POST.get('novo-cidade')
-        novo_estado = request.POST.get('novo-estado')
-        novo_cep = request.POST.get('novo-cep')
-        novo_complemento = request.POST.get('novo-complemento')
+        logradouro = request.POST.get('add-logradouro')
+        numero = request.POST.get('add-numero')
+        bairro = request.POST.get('add-bairro')
+        cidade = request.POST.get('add-cidade')
+        estado = request.POST.get('add-estado')
+        cep = request.POST.get('add-cep')
+        complemento = request.POST.get('add-complemento', '')
+
         endereco = None
-        # Se algum campo de novo endereço foi preenchido, cria o endereço
-        if novo_logradouro and novo_numero and novo_bairro and novo_cidade and novo_estado and novo_cep:
-            endereco = Endereco.objects.create(
-                logradouro=novo_logradouro,
-                numero=novo_numero,
-                bairro=novo_bairro,
-                cidade=novo_cidade,
-                estado=novo_estado,
-                cep=novo_cep,
-                complemento=novo_complemento
-            )
-        elif endereco_id:
-            endereco = Endereco.objects.filter(id=endereco_id).first()
+        
+        # Se foi selecionado um endereço existente
+        if endereco_existente_id:
+            endereco = Endereco.objects.filter(id=endereco_existente_id).first()
+        # Se foram preenchidos campos para novo endereço
+        elif logradouro and numero and bairro and cidade and estado and cep:
+            try:
+                endereco = Endereco.objects.create(
+                    logradouro=logradouro,
+                    numero=numero,
+                    bairro=bairro,
+                    cidade=cidade,
+                    estado=estado,
+                    cep=cep,
+                    complemento=complemento
+                )
+            except Exception as e:
+                messages.error(request, f'Erro ao criar endereço: {str(e)}')
+                return redirect('admin_fornecedor_list')
+
         if nome and cnpj and email and telefone and endereco:
             try:
                 Fornecedor.objects.create(
@@ -350,25 +361,71 @@ def admin_fornecedor_list(request):
         return redirect('admin_fornecedor_list')
 
     # Edição de fornecedor
-    if request.method == 'POST' and 'fornecedor_id' in request.POST and 'nome' in request.POST and 'cnpj' in request.POST and 'email' in request.POST and 'telefone' in request.POST and 'endereco' in request.POST:
+    if request.method == 'POST' and 'fornecedor_id' in request.POST and 'nome' in request.POST:
         fornecedor_id = request.POST.get('fornecedor_id')
         nome = request.POST.get('nome')
         cnpj = request.POST.get('cnpj')
         email = request.POST.get('email')
         telefone = request.POST.get('telefone')
-        endereco_id = request.POST.get('endereco')
-        endereco = Endereco.objects.filter(id=endereco_id).first() if endereco_id else None
+        
+        # Verificar se foi selecionado um endereço existente
+        endereco_existente_id = request.POST.get('edit-endereco-existente')
+        
+        # Campos do endereço
+        logradouro = request.POST.get('logradouro')
+        numero = request.POST.get('numero')
+        bairro = request.POST.get('bairro')
+        cidade = request.POST.get('cidade')
+        estado = request.POST.get('estado')
+        cep = request.POST.get('cep')
+        complemento = request.POST.get('complemento', '')
+
         try:
             fornecedor = Fornecedor.objects.get(id=fornecedor_id)
+            
+            # Atualizar dados do fornecedor
             fornecedor.nome = nome
             fornecedor.cnpj = cnpj
             fornecedor.email = email
             fornecedor.telefone = telefone
-            fornecedor.endereco = endereco
+            
+            # Se foi selecionado um endereço existente diferente
+            if endereco_existente_id:
+                novo_endereco = Endereco.objects.filter(id=endereco_existente_id).first()
+                if novo_endereco:
+                    fornecedor.endereco = novo_endereco
+            # Se foi editado o endereço atual
+            elif logradouro and numero and bairro and cidade and estado and cep:
+                if fornecedor.endereco:
+                    # Atualizar endereço existente
+                    endereco = fornecedor.endereco
+                    endereco.logradouro = logradouro
+                    endereco.numero = numero
+                    endereco.bairro = bairro
+                    endereco.cidade = cidade
+                    endereco.estado = estado
+                    endereco.cep = cep
+                    endereco.complemento = complemento
+                    endereco.save()
+                else:
+                    # Criar novo endereço se não existir
+                    endereco = Endereco.objects.create(
+                        logradouro=logradouro,
+                        numero=numero,
+                        bairro=bairro,
+                        cidade=cidade,
+                        estado=estado,
+                        cep=cep,
+                        complemento=complemento
+                    )
+                    fornecedor.endereco = endereco
+            
             fornecedor.save()
             messages.success(request, 'Fornecedor editado com sucesso!')
         except Fornecedor.DoesNotExist:
             messages.error(request, 'Fornecedor não encontrado.')
+        except Exception as e:
+            messages.error(request, f'Erro ao editar fornecedor: {str(e)}')
         return redirect('admin_fornecedor_list')
 
     # Exclusão de fornecedor
@@ -376,16 +433,26 @@ def admin_fornecedor_list(request):
         fornecedor_id = request.POST.get('fornecedor_id')
         try:
             fornecedor = Fornecedor.objects.get(id=fornecedor_id)
+            # Deletar o endereço associado se existir e não for usado por outros fornecedores
+            if fornecedor.endereco:
+                endereco = fornecedor.endereco
+                # Verificar se o endereço é usado por outros fornecedores
+                outros_fornecedores = Fornecedor.objects.filter(endereco=endereco).exclude(id=fornecedor.id)
+                if not outros_fornecedores.exists():
+                    endereco.delete()
             fornecedor.delete()
             messages.success(request, 'Fornecedor excluído com sucesso!')
         except Fornecedor.DoesNotExist:
             messages.error(request, 'Fornecedor não encontrado.')
+        except Exception as e:
+            messages.error(request, f'Erro ao excluir fornecedor: {str(e)}')
         return redirect('admin_fornecedor_list')
 
     fornecedores = Fornecedor.objects.select_related('endereco').all().order_by('id')
     paginator = Paginator(fornecedores, per_page)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    
     contexto = {
         'sidebar_links': get_sidebar_links(request.user),
         'fornecedores': page_obj,
@@ -1061,93 +1128,6 @@ def admin_local_list(request):
 
 
 @login_required
-def admin_endereco_list(request):
-    if not request.user.is_authenticated or getattr(request.user.profile, 'role', None) != 'ADMIN':
-        return redirect('login')
-
-    per_page = int(request.GET.get('per_page', 10))
-
-    # Adicionar endereço
-    if request.method == 'POST' and 'add-endereco' in request.POST:
-        logradouro = request.POST.get('add-logradouro')
-        numero = request.POST.get('add-numero')
-        complemento = request.POST.get('add-complemento')
-        bairro = request.POST.get('add-bairro')
-        cidade = request.POST.get('add-cidade')
-        estado = request.POST.get('add-estado')
-        cep = request.POST.get('add-cep')
-        
-        if logradouro and numero and bairro and cidade and estado and cep:
-            try:
-                Endereco.objects.create(
-                    logradouro=logradouro,
-                    numero=numero,
-                    complemento=complemento,
-                    bairro=bairro,
-                    cidade=cidade,
-                    estado=estado,
-                    cep=cep
-                )
-                messages.success(request, 'Endereço cadastrado com sucesso!')
-            except Exception as e:
-                messages.error(request, f'Erro ao cadastrar endereço: {str(e)}')
-        else:
-            messages.error(request, 'Preencha todos os campos obrigatórios.')
-        return redirect('admin_endereco_list')
-
-    # Editar endereço
-    if request.method == 'POST' and 'edit-endereco' in request.POST:
-        endereco_id = request.POST.get('endereco_id')
-        logradouro = request.POST.get('logradouro')
-        numero = request.POST.get('numero')
-        complemento = request.POST.get('complemento')
-        bairro = request.POST.get('bairro')
-        cidade = request.POST.get('cidade')
-        estado = request.POST.get('estado')
-        cep = request.POST.get('cep')
-        
-        try:
-            endereco = Endereco.objects.get(id=endereco_id)
-            endereco.logradouro = logradouro
-            endereco.numero = numero
-            endereco.complemento = complemento
-            endereco.bairro = bairro
-            endereco.cidade = cidade
-            endereco.estado = estado
-            endereco.cep = cep
-            endereco.save()
-            messages.success(request, 'Endereço editado com sucesso!')
-        except Exception as e:
-            messages.error(request, f'Erro ao editar endereço: {str(e)}')
-        return redirect('admin_endereco_list')
-
-    # Excluir endereço
-    if request.method == 'POST' and 'delete-endereco' in request.POST:
-        endereco_id = request.POST.get('endereco_id')
-        try:
-            endereco = Endereco.objects.get(id=endereco_id)
-            endereco.delete()
-            messages.success(request, 'Endereço excluído com sucesso!')
-        except Exception as e:
-            messages.error(request, f'Erro ao excluir endereço: {str(e)}')
-        return redirect('admin_endereco_list')
-
-    # Listar endereços
-    enderecos = Endereco.objects.all().order_by('cidade', 'bairro', 'logradouro')
-
-    paginator = Paginator(enderecos, per_page)
-    page_number = request.GET.get('page')
-    enderecos_page = paginator.get_page(page_number)
-
-    context = {
-        'sidebar_links': get_sidebar_links(request.user),
-        'enderecos': enderecos_page,
-    }
-    
-    return render(request, 'pages/admin/endereco_list.html', context)
-
-
-@login_required
 def admin_comprador_list(request):
     if not request.user.is_authenticated or getattr(request.user.profile, 'role', None) != 'ADMIN':
         return redirect('login')
@@ -1283,7 +1263,6 @@ def get_sidebar_links(user):
             {'url': '/administrador/fornecedores/', 'label': 'Fornecedores'},
             {'url': '/administrador/estoques/', 'label': 'Estoques'},
             {'url': '/administrador/locais/', 'label': 'Locais'},
-            {'url': '/administrador/enderecos/', 'label': 'Endereços'},
             {'url': '/administrador/compradores/', 'label': 'Compradores'},
             {'url': '/administrador/compras/', 'label': 'Compras'},
             {'url': '/administrador/solicitacoes/',
