@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gearvault', '0007_produto_categoria_produto_preco'),
+        ('gearvault', '0006_remove_estoque_lote_remove_estoque_local_and_more'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
