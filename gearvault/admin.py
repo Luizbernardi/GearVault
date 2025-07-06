@@ -32,9 +32,14 @@ class LocalArmazenamentoAdmin(admin.ModelAdmin):
 
 @admin.register(Produto)
 class ProdutoAdmin(admin.ModelAdmin):
-    list_display = ("nome", "codigo", "fornecedor", "imagem")
+    list_display = ("nome", "codigo", "get_fornecedores", "imagem")
     search_fields = ("nome", "codigo" )
-    list_filter = ("fornecedor",)
+    list_filter = ("fornecedores",)
+    filter_horizontal = ('fornecedores',)
+    
+    def get_fornecedores(self, obj):
+        return ", ".join([f.nome for f in obj.fornecedores.all()[:3]]) + ("..." if obj.fornecedores.count() > 3 else "")
+    get_fornecedores.short_description = 'Fornecedores'
 
 
 @admin.register(Compra)

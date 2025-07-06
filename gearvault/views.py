@@ -476,19 +476,20 @@ def admin_produto_list(request):
         categoria = request.POST.get('add-categoria')
         imagem = request.FILES.get('add-imagem')
         descricao = request.POST.get('add-descricao')
-        fornecedor_id = request.POST.get('add-fornecedor')
+        fornecedores_ids = request.POST.getlist('add-fornecedores')
         
         if nome and codigo:
             try:
-                fornecedor = Fornecedor.objects.filter(id=fornecedor_id).first() if fornecedor_id else None
-                Produto.objects.create(
+                produto = Produto.objects.create(
                     nome=nome,
                     codigo=codigo,
                     categoria=categoria,
                     imagem=imagem,
                     descricao=descricao,
-                    fornecedor=fornecedor,
                 )
+                # Adiciona os fornecedores selecionados
+                if fornecedores_ids:
+                    produto.fornecedores.set(fornecedores_ids)
                 messages.success(request, 'Produto cadastrado com sucesso!')
             except Exception as e:
                 messages.error(request, f'Erro ao cadastrar produto: {str(e)}')
@@ -504,8 +505,8 @@ def admin_produto_list(request):
         categoria = request.POST.get('categoria')
         imagem = request.FILES.get('imagem')
         descricao = request.POST.get('descricao')
-        fornecedor_id = request.POST.get('fornecedor')
-        fornecedor = Fornecedor.objects.filter(id=fornecedor_id).first() if fornecedor_id else None
+        fornecedores_ids = request.POST.getlist('fornecedores')
+        
         try:
             produto = Produto.objects.get(id=produto_id)
             produto.nome = nome
@@ -514,8 +515,9 @@ def admin_produto_list(request):
             if imagem:
                 produto.imagem = imagem
             produto.descricao = descricao
-            produto.fornecedor = fornecedor
             produto.save()
+            # Atualiza os fornecedores
+            produto.fornecedores.set(fornecedores_ids)
             messages.success(request, 'Produto editado com sucesso!')
         except Produto.DoesNotExist:
             messages.error(request, 'Produto não encontrado.')
@@ -532,7 +534,7 @@ def admin_produto_list(request):
             messages.error(request, 'Produto não encontrado.')
         return redirect('admin_produto_list')
 
-    produtos = Produto.objects.all().order_by('id')
+    produtos = Produto.objects.all().prefetch_related('fornecedores').order_by('id')
     fornecedores = Fornecedor.objects.all()
     paginator = Paginator(produtos, per_page)
     page_number = request.GET.get('page')

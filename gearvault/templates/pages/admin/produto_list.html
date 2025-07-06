@@ -75,7 +75,15 @@
                 <td class="py-2">{{ produto.nome }}</td>
                 <td class="py-2">{{ produto.codigo }}</td>
                 <td class="py-2">{{ produto.categoria|default:"Não informado" }}</td>
-                <td class="py-2">{{ produto.fornecedor.nome|default:"Não informado" }}</td>
+                <td class="py-2">
+                  {% if produto.fornecedores.all %}
+                    {% for fornecedor in produto.fornecedores.all %}
+                      <span class="badge bg-primary me-1">{{ fornecedor.nome }}</span>
+                    {% endfor %}
+                  {% else %}
+                    <span class="text-muted">Nenhum fornecedor</span>
+                  {% endif %}
+                </td>
                 <td class="py-2" style="width: 9%;">
                   <div class="d-flex gap-3 justify-content-center">
                     <button class="btn btn-sm rounded-circle d-inline-flex align-items-center text-white justify-content-center"
@@ -87,7 +95,7 @@
                       data-codigo="{{ produto.codigo }}"
                       data-categoria="{{ produto.categoria }}"
                       data-descricao="{{ produto.descricao }}"
-                      data-fornecedor-id="{{ produto.fornecedor.id|default:'' }}"
+                      data-fornecedores-ids="{% for fornecedor in produto.fornecedores.all %}{{ fornecedor.id }}{% if not forloop.last %},{% endif %}{% endfor %}"
                       title="Editar">
                       <i class="bi bi-pencil"></i>
                     </button>
@@ -174,14 +182,14 @@
                     <label for="add-categoria" class="form-label">Categoria</label>
                     <input type="text" class="form-control" name="add-categoria" id="add-categoria">
                   </div>
-                  <div class="col-md-6 mb-3">
-                    <label for="add-fornecedor" class="form-label">Fornecedor</label>
-                    <select class="form-select" name="add-fornecedor" id="add-fornecedor">
-                      <option value="">Selecione um fornecedor</option>
+                  <div class="col-md-12 mb-3">
+                    <label for="add-fornecedores" class="form-label">Fornecedores</label>
+                    <select class="form-select" name="add-fornecedores" id="add-fornecedores" multiple>
                       {% for fornecedor in fornecedores %}
                         <option value="{{ fornecedor.id }}">{{ fornecedor.nome }}</option>
                       {% endfor %}
                     </select>
+                    <small class="form-text text-muted">Mantenha Ctrl pressionado para selecionar múltiplos fornecedores</small>
                   </div>
                   <div class="col-md-6 mb-3">
                     <label for="add-imagem" class="form-label">Imagem</label>
@@ -226,14 +234,14 @@
                     <label for="edit-categoria" class="form-label">Categoria</label>
                     <input type="text" class="form-control" name="categoria" id="edit-categoria">
                   </div>
-                  <div class="col-md-6 mb-3">
-                    <label for="edit-fornecedor" class="form-label">Fornecedor</label>
-                    <select class="form-select" name="fornecedor" id="edit-fornecedor">
-                      <option value="">Selecione um fornecedor</option>
+                  <div class="col-md-12 mb-3">
+                    <label for="edit-fornecedores" class="form-label">Fornecedores</label>
+                    <select class="form-select" name="fornecedores" id="edit-fornecedores" multiple>
                       {% for fornecedor in fornecedores %}
                         <option value="{{ fornecedor.id }}">{{ fornecedor.nome }}</option>
                       {% endfor %}
                     </select>
+                    <small class="form-text text-muted">Mantenha Ctrl pressionado para selecionar múltiplos fornecedores</small>
                   </div>
                   <div class="col-md-6 mb-3">
                     <label for="edit-imagem" class="form-label">Imagem</label>
@@ -291,6 +299,35 @@
   }
   #sidebar-panel {
     transition: width 0.3s cubic-bezier(0.4,0,0.2,1), display 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  
+  /* Estilos para select múltiplo */
+  select[multiple] {
+    min-height: 120px;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.375rem 0.75rem;
+  }
+  
+  select[multiple] option {
+    padding: 0.25rem 0.5rem;
+    margin: 0.125rem 0;
+    border-radius: 0.25rem;
+  }
+  
+  select[multiple] option:checked {
+    background: #083D77 !important;
+    color: white !important;
+  }
+  
+  select[multiple] option:hover {
+    background: #f8f9fa !important;
+    color: #212529 !important;
+  }
+  
+  .badge {
+    font-size: 0.75rem;
+    margin-bottom: 0.125rem;
   }
 </style>
 

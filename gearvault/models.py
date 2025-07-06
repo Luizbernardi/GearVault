@@ -74,8 +74,8 @@ class Produto(models.Model):
     codigo = models.CharField(max_length=100, unique=True)
     categoria = models.CharField(max_length=100, blank=True, null=True)
     descricao = models.TextField(blank=True, null=True)
-    fornecedor = models.ForeignKey(
-        Fornecedor, on_delete=models.SET_NULL, null=True, blank=True)
+    fornecedores = models.ManyToManyField(
+        Fornecedor, blank=True, related_name='produtos')
     imagem = models.ImageField(upload_to='produtos/', blank=True, null=True)
 
     def __str__(self):
