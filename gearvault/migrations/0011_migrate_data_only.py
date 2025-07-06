@@ -1,46 +1,13 @@
 # Generated manually on 2025-07-06
-# Migração para converter Produto.fornecedor (1:N) para Produto.fornecedores (N:N)
-# e remover o campo preco
+# Migração simplificada apenas para migrar dados e remover campos antigos
+# Assume que a tabela gearvault_produto_fornecedores já existe
 
-from django.db import migrations, models, connection
+from django.db import migrations, connection
 
 
-def check_and_create_many_to_many_table(apps, schema_editor):
+def migrate_existing_data(apps, schema_editor):
     """
-    Verifica se a tabela ManyToMany já existe, se não existir, cria
-    """
-    cursor = connection.cursor()
-    
-    try:
-        # Verifica se a tabela já existe
-        if connection.vendor == 'postgresql':
-            cursor.execute("""
-                SELECT table_name 
-                FROM information_schema.tables 
-                WHERE table_name='gearvault_produto_fornecedores'
-                    AND table_schema = current_schema();
-            """)
-            table_exists = cursor.fetchone() is not None
-        else:  # SQLite
-            cursor.execute("""
-                SELECT name FROM sqlite_master 
-                WHERE type='table' AND name='gearvault_produto_fornecedores';
-            """)
-            table_exists = cursor.fetchone() is not None
-        
-        if table_exists:
-            print("Tabela gearvault_produto_fornecedores já existe, pulando criação.")
-        else:
-            print("Criando tabela gearvault_produto_fornecedores...")
-            # A criação será feita pela operação AddField do Django
-            
-    except Exception as e:
-        print(f"Erro ao verificar tabela: {e}")
-
-
-def migrate_fornecedor_to_many_to_many(apps, schema_editor):
-    """
-    Migra dados do campo fornecedor (ForeignKey) para fornecedores (ManyToMany)
+    Migra dados do campo fornecedor para fornecedores (apenas se o campo ainda existir)
     """
     cursor = connection.cursor()
     
@@ -59,23 +26,7 @@ def migrate_fornecedor_to_many_to_many(apps, schema_editor):
             columns = [row[1] for row in cursor.fetchall()]
             has_fornecedor = 'fornecedor_id' in columns
         
-        # Verifica se a tabela intermediária existe
-        if connection.vendor == 'postgresql':
-            cursor.execute("""
-                SELECT table_name 
-                FROM information_schema.tables 
-                WHERE table_name='gearvault_produto_fornecedores'
-                    AND table_schema = current_schema();
-            """)
-            table_exists = cursor.fetchone() is not None
-        else:
-            cursor.execute("""
-                SELECT name FROM sqlite_master 
-                WHERE type='table' AND name='gearvault_produto_fornecedores';
-            """)
-            table_exists = cursor.fetchone() is not None
-        
-        if has_fornecedor and table_exists:
+        if has_fornecedor:
             print("Migrando dados de fornecedor único para fornecedores múltiplos...")
             
             # Busca todos os produtos que têm fornecedor definido
@@ -102,24 +53,13 @@ def migrate_fornecedor_to_many_to_many(apps, schema_editor):
             
             print(f"Migrados {len(produtos_com_fornecedor)} produtos com fornecedores.")
         else:
-            if not has_fornecedor:
-                print("Campo fornecedor_id não encontrado, pulando migração de dados.")
-            if not table_exists:
-                print("Tabela intermediária não encontrada, será criada pela migração.")
+            print("Campo fornecedor_id não encontrado, dados já migrados.")
             
     except Exception as e:
         print(f"Erro durante migração de dados: {e}")
-        # Não falha a migração, apenas informa o problema
 
 
-def reverse_migration(apps, schema_editor):
-    """
-    Operação reversa - não implementada pois seria complexa
-    """
-    print("Operação reversa não implementada. Use backup do banco para reverter.")
-
-
-def remove_old_fields_safely(apps, schema_editor):
+def remove_old_fields(apps, schema_editor):
     """
     Remove campos antigos de forma segura
     """
@@ -137,10 +77,6 @@ def remove_old_fields_safely(apps, schema_editor):
             if cursor.fetchone():
                 cursor.execute("ALTER TABLE gearvault_produto DROP COLUMN IF EXISTS fornecedor_id")
                 print("Campo fornecedor_id removido com sucesso.")
-        else:
-            # SQLite não suporta DROP COLUMN facilmente, mas como estamos focando em produção (PostgreSQL)
-            # vamos deixar isso para o SQLite local se necessário
-            pass
         
         # Remove campo preco se existir
         if connection.vendor == 'postgresql':
@@ -156,7 +92,6 @@ def remove_old_fields_safely(apps, schema_editor):
         
     except Exception as e:
         print(f"Erro ao remover campos antigos: {e}")
-        # Não falha a migração
 
 
 class Migration(migrations.Migration):
@@ -166,21 +101,15 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # 1. Verifica e adiciona o campo ManyToMany apenas se necessário
+        # 1. Migra os dados do campo antigo para o novo
         migrations.RunPython(
-            check_and_create_many_to_many_table, 
+            migrate_existing_data, 
             migrations.RunPython.noop
         ),
         
-        # 2. Migra os dados do campo antigo para o novo
+        # 2. Remove os campos antigos de forma segura
         migrations.RunPython(
-            migrate_fornecedor_to_many_to_many, 
-            reverse_migration
-        ),
-        
-        # 3. Remove os campos antigos de forma segura
-        migrations.RunPython(
-            remove_old_fields_safely, 
+            remove_old_fields, 
             migrations.RunPython.noop
         ),
     ]
