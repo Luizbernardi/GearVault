@@ -22,5 +22,12 @@ else:
 echo "Coletando arquivos estáticos..."
 python manage.py collectstatic --noinput
 
+echo "Criando diretórios de mídia..."
+mkdir -p /code/media/produtos
+mkdir -p /code/media/invoices
+chmod 755 /code/media
+chmod 755 /code/media/produtos
+chmod 755 /code/media/invoices
+
 echo "Iniciando servidor..."
 exec "$@"

@@ -16,6 +16,9 @@ RUN set -ex && \
 
 COPY . /code
 
+# Criar diretórios necessários
+RUN mkdir -p /code/media /code/staticfiles
+
 # Tornar o script executável
 RUN chmod +x /code/start.sh
 
