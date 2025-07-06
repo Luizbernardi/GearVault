@@ -306,10 +306,15 @@ def admin_fornecedor_list(request):
 
     # Adição de fornecedor
     if request.method == 'POST' and 'add-fornecedor' in request.POST:
+        print("=== DEBUG FORNECEDOR ===")
+        print("POST data:", request.POST)
+        
         nome = request.POST.get('add-nome')
         cnpj = request.POST.get('add-cnpj')
         email = request.POST.get('add-email')
         telefone = request.POST.get('add-telefone')
+        
+        print(f"Dados fornecedor: nome={nome}, cnpj={cnpj}, email={email}, telefone={telefone}")
         
         # Verificar se foi selecionado um endereço existente ou se criará um novo
         endereco_existente_id = request.POST.get('add-endereco-existente')
@@ -323,41 +328,66 @@ def admin_fornecedor_list(request):
         cep = request.POST.get('add-cep')
         complemento = request.POST.get('add-complemento', '')
 
+        print(f"Endereco existente ID: {endereco_existente_id}")
+        print(f"Dados endereco novo: logradouro={logradouro}, numero={numero}, bairro={bairro}, cidade={cidade}, estado={estado}, cep={cep}")
+
         endereco = None
         
         # Se foi selecionado um endereço existente
         if endereco_existente_id:
             endereco = Endereco.objects.filter(id=endereco_existente_id).first()
+            print(f"Endereco encontrado: {endereco}")
         # Se foram preenchidos campos para novo endereço
         elif logradouro and numero and bairro and cidade and estado and cep:
             try:
+                # Remove formatação do CEP se houver
+                cep_limpo = cep.replace('-', '').replace(' ', '') if cep else ''
+                
                 endereco = Endereco.objects.create(
                     logradouro=logradouro,
                     numero=numero,
                     bairro=bairro,
                     cidade=cidade,
                     estado=estado,
-                    cep=cep,
+                    cep=cep_limpo,
                     complemento=complemento
                 )
+                print(f"Endereco criado: {endereco}")
             except Exception as e:
+                print(f"Erro ao criar endereco: {e}")
                 messages.error(request, f'Erro ao criar endereço: {str(e)}')
                 return redirect('admin_fornecedor_list')
 
-        if nome and cnpj and email and telefone and endereco:
+        print(f"Endereco final: {endereco}")
+        print(f"Validacao: nome={bool(nome)}, cnpj={bool(cnpj)}, email={bool(email)}, telefone={bool(telefone)}, endereco={bool(endereco)}")
+
+        if nome and cnpj and email and telefone:
             try:
-                Fornecedor.objects.create(
+                # Remove formatação do CNPJ e telefone se houver
+                cnpj_limpo = cnpj.replace('.', '').replace('/', '').replace('-', '') if cnpj else ''
+                telefone_limpo = telefone.replace('(', '').replace(')', '').replace('-', '').replace(' ', '') if telefone else ''
+                
+                fornecedor = Fornecedor.objects.create(
                     nome=nome,
-                    cnpj=cnpj,
+                    cnpj=cnpj_limpo,
                     email=email,
-                    telefone=telefone,
+                    telefone=telefone_limpo,
                     endereco=endereco
                 )
+                print(f"Fornecedor criado: {fornecedor}")
                 messages.success(request, 'Fornecedor cadastrado com sucesso!')
             except Exception as e:
+                print(f"Erro ao criar fornecedor: {e}")
                 messages.error(request, f'Erro ao cadastrar fornecedor: {str(e)}')
         else:
-            messages.error(request, 'Preencha todos os campos obrigatórios.')
+            missing_fields = []
+            if not nome: missing_fields.append('nome')
+            if not cnpj: missing_fields.append('cnpj')
+            if not email: missing_fields.append('email')
+            if not telefone: missing_fields.append('telefone')
+            
+            print(f"Campos obrigatórios faltando: {missing_fields}")
+            messages.error(request, f'Preencha todos os campos obrigatórios: {", ".join(missing_fields)}')
         return redirect('admin_fornecedor_list')
 
     # Edição de fornecedor
