@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalhes do Estoque: {{ estoque.nome }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid" id="main-content-panel">
+  <div class="row">
+    <div class="col-md-2" id="sidebar-panel">
+      {% include 'sidebar.html' %}
+    </div>
+    <div class="col-md-10" id="painel-content">
+      <div class="card mt-4 mb-4" style="border: 1px solid #083D77;">
+        <div class="card-header text-white d-flex justify-content-between align-items-center" style="background-color: #083D77;">
+          <h4 class="mb-0">Detalhes do Estoque: {{ estoque.nome }}</h4>
+          <button onclick="history.back()" class="btn btn-light btn-sm">
+            <i class="bi bi-arrow-left"></i> Voltar
+          </button>
+        </div>
+        <div class="card-body">
+          
+          <!-- Messages -->
+          {% if messages %}
+            <div aria-live="polite" aria-atomic="true" class="position-relative">
+              <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+                {% for message in messages %}
+                  <div class="toast align-items-center text-bg-{% if message.tags == 'error' %}danger{% elif message.tags == 'success' %}success{% else %}info{% endif %} border-0 show" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="5000">
+                    <div class="d-flex">
+                      <div class="toast-body">
+                        {{ message }}
+                      </div>
+                      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          {% endif %}          
+          <!-- Informações Gerais -->
+          <div class="row mb-4">
+            <div class="col-md-8">
+              <div class="card h-100" style="border: 1px solid #083D77;">
+                <div class="card-header text-white" style="background-color: #083D77;">
+                  <h6 class="mb-0"><i class="bi bi-info-circle"></i> Informações Gerais</h6>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p><strong>Nome:</strong> {{ estoque.nome }}</p>
+                      <p><strong>Descrição:</strong> {{ estoque.descricao|default:"Não informado" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                      <p><strong>Total de Locais:</strong> {{ total_locais }}</p>
+                      <p><strong>Total de Compras:</strong> {{ total_compras }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="col-md-4">
+              <div class="card h-100" style="border: 1px solid #083D77;">
+                <div class="card-header text-white" style="background-color: #083D77;">
+                  <h6 class="mb-0"><i class="bi bi-graph-up"></i> Estatísticas</h6>
+                </div>
+                <div class="card-body">
+                  <div class="text-center">
+                    <h3 class="text-primary">{{ total_itens }}</h3>
+                    <p class="text-muted">Total de Itens</p>
+                    <hr>
+                    <h4 class="text-success">R$ {{ valor_total|floatformat:2 }}</h4>
+                    <p class="text-muted">Valor Total</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>          <!-- Locais de Armazenamento -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="card" style="border: 1px solid #083D77;">
+                <div class="card-header text-white" style="background-color: #083D77;">
+                  <h6 class="mb-0"><i class="bi bi-geo-alt"></i> Locais de Armazenamento ({{ total_locais }})</h6>
+                </div>
+                <div class="card-body">
+                  {% if locais %}
+                    <div class="row">
+                      {% for local in locais %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                          <div class="card border-left-primary">
+                            <div class="card-body">
+                              <h6 class="card-title">{{ local.nome }}</h6>
+                              <p class="card-text text-muted">
+                                {{ local.descricao|default:"Sem descrição" }}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    <div class="text-center py-4">
+                      <i class="bi bi-geo-alt text-muted" style="font-size: 3rem;"></i>
+                      <p class="text-muted">Nenhum local de armazenamento cadastrado.</p>
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>          <!-- Produtos Mais Populares -->
+          {% if produtos_populares %}
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="card h-100" style="border: 1px solid #083D77;">
+                <div class="card-header text-white" style="background-color: #083D77;">
+                  <h6 class="mb-0"><i class="bi bi-star"></i> Produtos Mais Populares</h6>
+                </div>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>Produto</th>
+                          <th class="text-center">Quantidade</th>
+                          <th class="text-end">Valor Total</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {% for produto in produtos_populares %}
+                        <tr>
+                          <td>
+                            <strong>{{ produto.produto__nome }}</strong><br>
+                            <small class="text-muted">{{ produto.produto__codigo }}</small>
+                          </td>
+                          <td class="text-center">{{ produto.total_quantidade }}</td>
+                          <td class="text-end">R$ {{ produto.total_valor|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fornecedores Top -->
+            <div class="col-md-6">
+              <div class="card h-100" style="border: 1px solid #083D77;">
+                <div class="card-header text-white" style="background-color: #083D77;">
+                  <h6 class="mb-0"><i class="bi bi-building"></i> Principais Fornecedores</h6>
+                </div>
+                <div class="card-body">
+                  {% if fornecedores_top %}
+                    <div class="table-responsive">
+                      <table class="table table-sm">
+                        <thead>
+                          <tr>
+                            <th>Fornecedor</th>
+                            <th class="text-center">Compras</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for fornecedor in fornecedores_top %}
+                          <tr>
+                            <td>{{ fornecedor.fornecedor__nome }}</td>
+                            <td class="text-center">{{ fornecedor.total_compras }}</td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                  {% else %}
+                    <div class="text-center py-3">
+                      <i class="bi bi-building text-muted" style="font-size: 2rem;"></i>
+                      <p class="text-muted">Nenhuma compra registrada.</p>
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endif %}          <!-- Compras Recentes -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="card" style="border: 1px solid #083D77;">
+                <div class="card-header text-white" style="background-color: #083D77;">
+                  <h6 class="mb-0"><i class="bi bi-cart"></i> Compras Recentes</h6>
+                </div>
+                <div class="card-body">
+                  {% if compras %}
+                    <div class="table-responsive">
+                      <table class="table table-striped">
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>Data</th>
+                            <th>Fornecedor</th>
+                            <th>Comprador</th>
+                            <th class="text-end">Valor Total</th>
+                            <th class="text-center">Ações</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {% for compra in compras %}
+                          <tr>
+                            <td>#{{ compra.id }}</td>
+                            <td>{{ compra.data|date:"d/m/Y" }}</td>
+                            <td>{{ compra.fornecedor.nome }}</td>
+                            <td>{{ compra.comprador.nome }}</td>
+                            <td class="text-end">R$ {{ compra.valor_total|floatformat:2 }}</td>
+                            <td class="text-center">
+                              <a href="{% url 'admin_compra_detalhes_pagina' compra.id %}" 
+                                 class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i> Ver Detalhes
+                              </a>
+                            </td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                    {% if total_compras > 10 %}
+                      <div class="text-center mt-3">
+                        <a href="{% url 'admin_compra_list' %}?estoque={{ estoque.id }}" 
+                           class="btn btn-outline-primary">
+                          Ver Todas as Compras ({{ total_compras }})
+                        </a>
+                      </div>
+                    {% endif %}
+                  {% else %}
+                    <div class="text-center py-4">
+                      <i class="bi bi-cart text-muted" style="font-size: 3rem;"></i>
+                      <p class="text-muted">Nenhuma compra registrada para este estoque.</p>
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Auto-hide toasts
+    var toastElList = [].slice.call(document.querySelectorAll('.toast'));
+    toastElList.forEach(function (toastEl) {
+      var toast = new bootstrap.Toast(toastEl, { delay: 5000 });
+      toast.show();
+    });
+  });
+</script>
+
+<script src="{% static 'js/painel-content-resize.js' %}"></script>
+
+<style>
+  .border-left-primary {
+    border-left: 4px solid #007bff !important;
+  }
+  
+  .card-title {
+    color: #2c3e50;
+  }
+  
+  .text-primary {
+    color: #007bff !important;
+  }
+  
+  .text-success {
+    color: #28a745 !important;
+  }
+</style>
+{% endblock %}

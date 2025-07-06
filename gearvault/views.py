@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from .models import Produto, Fornecedor, Compra, ItemCompra, Estoque, LocalArmazenamento, Endereco, Comprador
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum, F, FloatField, Count
@@ -1041,6 +1041,81 @@ def admin_estoque_list(request):
     }
     
     return render(request, 'pages/admin/estoque_list.html', context)
+
+
+@login_required
+def admin_estoque_detalhes(request, estoque_id):
+    if not request.user.is_authenticated or getattr(request.user.profile, 'role', None) != 'ADMIN':
+        return redirect('login')
+    
+    try:
+        estoque = get_object_or_404(Estoque, id=estoque_id)
+    except:
+        messages.error(request, 'Estoque não encontrado.')
+        return redirect('admin_estoque_list')
+    
+    # Buscar locais de armazenamento
+    locais = LocalArmazenamento.objects.filter(estoque=estoque).order_by('nome')
+    
+    # Buscar compras realizadas neste estoque
+    compras = Compra.objects.filter(estoque=estoque).select_related('fornecedor', 'comprador').order_by('-data')[:10]
+    
+    # Calcular estatísticas do estoque
+    total_compras = Compra.objects.filter(estoque=estoque).count()
+    total_locais = locais.count()
+    
+    # Calcular total de itens no estoque
+    total_itens = ItemCompra.objects.filter(
+        local__estoque=estoque
+    ).aggregate(total=Sum('quantidade'))['total'] or 0
+    
+    # Calcular valor total dos itens
+    valor_total = ItemCompra.objects.filter(
+        local__estoque=estoque
+    ).aggregate(
+        total=Sum(F('quantidade') * F('valor_unitario'))
+    )['total'] or 0
+    
+    # Produtos mais comuns no estoque (top 5)
+    produtos_populares = ItemCompra.objects.filter(
+        local__estoque=estoque
+    ).values('produto__nome', 'produto__codigo').annotate(
+        total_quantidade=Sum('quantidade'),
+        total_valor=Sum(F('quantidade') * F('valor_unitario'))
+    ).order_by('-total_quantidade')[:5]
+    
+    # Fornecedores que mais vendem para este estoque (top 5)
+    fornecedores_top = Compra.objects.filter(
+        estoque=estoque
+    ).values('fornecedor__nome').annotate(
+        total_compras=Count('id')
+    ).order_by('-total_compras')[:5]
+    
+    # Calcular valor total para cada fornecedor
+    for fornecedor in fornecedores_top:
+        compras_fornecedor = Compra.objects.filter(
+            estoque=estoque,
+            fornecedor__nome=fornecedor['fornecedor__nome']
+        )
+        valor_total_fornecedor = 0
+        for compra in compras_fornecedor:
+            valor_total_fornecedor += compra.valor_total
+        fornecedor['valor_total'] = valor_total_fornecedor
+    
+    context = {
+        'sidebar_links': get_sidebar_links(request.user),
+        'estoque': estoque,
+        'locais': locais,
+        'compras': compras,
+        'total_compras': total_compras,
+        'total_locais': total_locais,
+        'total_itens': total_itens,
+        'valor_total': valor_total,
+        'produtos_populares': produtos_populares,
+        'fornecedores_top': fornecedores_top,
+    }
+    
+    return render(request, 'pages/admin/estoque_detalhes.html', context)
 
 
 @login_required

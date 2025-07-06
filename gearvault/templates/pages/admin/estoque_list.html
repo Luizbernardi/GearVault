@@ -61,12 +61,18 @@
             <tbody>
             {% for estoque in estoques %}
               <tr>
-                <td class="py-2" style="width: 25%;">{{ estoque.nome }}</td>
+                <td class="py-2" style="width: 20%;">{{ estoque.nome }}</td>
                 <td class="py-2" style="width: 30%;">{{ estoque.descricao|default:"Sem descrição" }}</td>
-                <td class="py-2" style="width: 15%;">{{ estoque.total_locais }}</td>
+                <td class="py-2" style="width: 10%;">{{ estoque.total_locais }}</td>
                 <td class="py-2" style="width: 15%;">{{ estoque.total_itens }}</td>
-                <td class="py-2" style="width: 15%;">
-                  <div class="d-flex gap-3 justify-content-center">
+                <td class="py-2" style="width: 25%;">
+                  <div class="d-flex gap-2 justify-content-center">
+                    <a href="{% url 'admin_estoque_detalhes' estoque.id %}" 
+                       class="btn btn-sm rounded-circle d-inline-flex align-items-center justify-content-center text-white"
+                       style="width: 36px; height: 36px; background-color: #28a745;"
+                       title="Ver Detalhes">
+                      <i class="bi bi-eye"></i>
+                    </a>
                     <button class="btn btn-sm rounded-circle d-inline-flex align-items-center text-white justify-content-center"
                       style="width: 36px; height: 36px; background-color: #083D77;"
                       data-bs-toggle="modal"

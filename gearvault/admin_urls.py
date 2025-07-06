@@ -7,6 +7,7 @@ urlpatterns = [
     path('fornecedores/', views.admin_fornecedor_list, name='admin_fornecedor_list'),
     path('produtos/', views.admin_produto_list, name='admin_produto_list'),
     path('estoques/', views.admin_estoque_list, name='admin_estoque_list'),
+    path('estoques/<int:estoque_id>/', views.admin_estoque_detalhes, name='admin_estoque_detalhes'),
     path('locais/', views.admin_local_list, name='admin_local_list'),
     path('compradores/', views.admin_comprador_list, name='admin_comprador_list'),
     path('compradores/<int:comprador_id>/compras/', views.admin_comprador_compras, name='admin_comprador_compras'),
