@@ -1420,14 +1420,13 @@ def get_sidebar_links(user):
         return [
             {'url': '/administrador/painel/', 'label': 'Painel Administrador'},
             {'url': '/administrador/usuarios/', 'label': 'Usuários'},
-            {'url': '/administrador/produtos/', 'label': 'Produtos'},
-            {'url': '/administrador/fornecedores/', 'label': 'Fornecedores'},
+            {'url': '/administrador/solicitacoes/', 'label': 'Solicitações'},
             {'url': '/administrador/estoques/', 'label': 'Estoques'},
-            {'url': '/administrador/locais/', 'label': 'Locais'},
+            {'url': '/administrador/locais/', 'label': 'Locais de Armazenamento'},
+            {'url': '/administrador/fornecedores/', 'label': 'Fornecedores'},
+            {'url': '/administrador/produtos/', 'label': 'Produtos'},
             {'url': '/administrador/compradores/', 'label': 'Compradores'},
             {'url': '/administrador/compras/', 'label': 'Compras'},
-            {'url': '/administrador/solicitacoes/',
-                'label': 'Solicitações'},
         ]
     elif role == 'USUARIO':
         return [
