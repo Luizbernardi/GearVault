@@ -36,3 +36,11 @@ console_command = '/code/manage.py shell'
 [[statics]]
   guest_path = '/code/static'
   url_prefix = '/static/'
+
+[[statics]]
+  guest_path = '/code/media'
+  url_prefix = '/media/'
+
+[mounts]
+  source = "gearvault_media"
+  destination = "/code/media"
