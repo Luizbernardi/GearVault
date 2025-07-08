@@ -1,0 +1,13 @@
+<!-- Componente: Item de Movimentação -->
+<!-- Uso: {% include 'components/movimentacao_item.html' with mov=movimentacao is_last=forloop.last %} -->
+<div class="d-flex justify-content-between align-items-center mb-3 {% if not is_last %}border-bottom pb-3{% endif %}">
+  <div>
+    <h6 class="mb-1">{{ mov.produto.nome|truncatechars:20 }}</h6>
+    <small class="text-muted">{{ mov.local.nome }} • {{ mov.compra.estoque.nome }}</small><br>
+    <small class="text-info">{{ mov.compra.data|date:"d/m/Y" }}</small>
+  </div>
+  <div class="text-end">
+    <span class="badge bg-secondary fs-6">{{ mov.quantidade }}</span><br>
+    <small class="text-success">R$ {{ mov.valor_unitario|floatformat:2 }}</small>
+  </div>
+</div>

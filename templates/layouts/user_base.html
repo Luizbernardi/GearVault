@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid" id="main-content-panel">
+  <div class="row">
+    <div class="col-md-2" id="sidebar-panel">
+      {% include 'sidebar.html' %}
+    </div>
+    <div class="col-md-10 mt-4" id="painel-content">
+      {% block user_content %}
+      {% endblock %}
+    </div>
+  </div>
+</div>
+
+<style>
+  #painel-content {
+    transition: width 0.3s cubic-bezier(0.4,0,0.2,1), margin-left 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+  #sidebar-panel {
+    transition: width 0.3s cubic-bezier(0.4,0,0.2,1), display 0.3s cubic-bezier(0.4,0,0.2,1);
+  }
+</style>
+
+<script src="{% static 'js/painel-content-resize.js' %}"></script>
+{% endblock %}
