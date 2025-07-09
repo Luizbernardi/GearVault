@@ -1,0 +1,18 @@
+<div class="card h-100" style="border: 1px solid #083D77;">
+  <div class="card-header text-white d-flex justify-content-between align-items-center" style="background-color: #083D77;">
+    <h5 class="mb-0">
+      {% if icon %}<i class="{{ icon }}"></i> {% endif %}{{ title }}
+    </h5>
+    {% if badge_text %}
+      <span class="badge bg-light text-dark">{{ badge_text }}</span>
+    {% endif %}
+    {% if action_url and action_text %}
+      <a href="{{ action_url }}" class="btn btn-sm btn-outline-light">{{ action_text }}</a>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    {% block card_content %}
+      <p class="text-muted">Conteúdo do card</p>
+    {% endblock %}
+  </div>
+</div>

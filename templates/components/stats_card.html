@@ -1,0 +1,11 @@
+<div class="col-lg-3 col-md-6 mb-3">
+  <div class="card text-white h-100" style="background-color: {{ bg_color|default:'#083D77' }}; {% if text_color %}color: {{ text_color }} !important;{% endif %}">
+    <div class="card-body text-center">
+      <i class="bi {{ icon }} display-4 mb-2"></i>
+      <h5 class="card-title" {% if text_color %}style="color: {{ text_color }} !important;"{% endif %}>{{ title }}</h5>
+      <p class="card-text display-6" {% if text_color %}style="color: {{ text_color }} !important;"{% endif %}>
+        {% if is_currency %}R$ {% endif %}{{ value }}
+      </p>
+    </div>
+  </div>
+</div>

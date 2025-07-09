@@ -1,0 +1,19 @@
+<div class="d-flex align-items-center mb-3 {% if not is_last %}border-bottom pb-3{% endif %}">
+  <div class="me-3">
+    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+      <i class="{{ icon|default:'bi-circle' }} text-muted"></i>
+    </div>
+  </div>
+  <div class="flex-grow-1">
+    <h6 class="mb-1">{{ title }}</h6>
+    <small class="text-muted">{{ subtitle }}</small>
+    {% if extra_info %}
+      <br><small class="text-info">{{ extra_info }}</small>
+    {% endif %}
+  </div>
+  {% if badge_text %}
+    <span class="badge bg-light text-dark">
+      {% if is_currency %}R$ {% endif %}{{ badge_text }}
+    </span>
+  {% endif %}
+</div>

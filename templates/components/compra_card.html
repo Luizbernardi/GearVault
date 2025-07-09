@@ -1,0 +1,15 @@
+<div class="col-md-6 mb-3">
+  <div class="card border-light shadow-sm h-100">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-start mb-2">
+        <h6 class="card-title mb-0">Compra #{{ compra.id }}</h6>
+        <span class="badge bg-success">R$ {{ compra.valor_total|floatformat:2 }}</span>
+      </div>
+      <p class="card-text mb-2">
+        <small class="text-muted"><i class="bi bi-calendar"></i> {{ compra.data|date:"d/m/Y" }}</small><br>
+        <small class="text-info"><i class="bi bi-truck"></i> {{ compra.fornecedor.nome|truncatechars:25 }}</small><br>
+        <small class="text-secondary"><i class="bi bi-archive"></i> {{ compra.estoque.nome }}</small>
+      </p>
+    </div>
+  </div>
+</div>
