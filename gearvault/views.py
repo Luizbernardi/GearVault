@@ -742,7 +742,7 @@ def admin_solicitacoes(request):
 
     from .models import SolicitacaoProduto
 
-    status_filter = request.GET.get('status', 'PENDENTE')
+    status_filter = request.GET.get('status', 'TODAS')
     solicitacoes_list = SolicitacaoProduto.objects.select_related(
         'usuario', 'produto', 'local', 'local__estoque'
     ).order_by('-data_solicitacao')
