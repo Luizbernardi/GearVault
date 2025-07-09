@@ -95,3 +95,5 @@ GearVault/
 - Model definitions and relationships can be found in `contas/models.py` and `gearvault/models.py`.
 - URL structures are defined in `core/urls.py`, `contas/urls.py`, `gearvault/usuario_urls.py`, and `gearvault/admin_urls.py`.
 - Deployment configurations are in `Dockerfile`, `Procfile`, `fly.toml`, and `start.sh`.
+
+teste
