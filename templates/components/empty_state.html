@@ -1,5 +1,5 @@
 <!-- Componente: Estado Vazio -->
-<!-- Uso: {% include 'components/empty_state.html' with icon='bi-cart-x' message='Nenhuma compra cadastrada.' %} -->
+<!-- Parâmetros: icon (opcional), message, large (opcional) -->
 <div class="text-center py-4">
   <i class="{{ icon|default:'bi-info-circle' }} {% if large %}display-1{% endif %} text-muted"></i>
   <p class="text-muted {% if not large %}mb-0{% else %}mt-2{% endif %}">{{ message }}</p>
