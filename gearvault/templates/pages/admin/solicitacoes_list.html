@@ -89,7 +89,8 @@
                       </td>
                       <td class="py-2">
                         <div class="d-flex gap-3">
-                          <button class="btn btn-sm btn-outline-info" 
+                          <button class="btn btn-sm d-inline-flex align-items-center justify-content-center text-white"
+                      style="width: 36px; height: 36px; background-color: #28a745;"
                                   data-bs-toggle="modal" 
                                   data-bs-target="#detalhesSolicitacaoModal"
                                   data-solicitacao-id="{{ solicitacao.id }}"
@@ -108,7 +109,8 @@
                           </button>
                           {% if solicitacao.status == 'PENDENTE' %}
                             <a href="{% url 'admin_processar_solicitacao' solicitacao.id %}" 
-                               class="btn btn-sm btn-success"
+                               class="btn btn-sm d-inline-flex align-items-center justify-content-center text-white"
+                      style="width: 36px; height: 36px; background-color:rgb(87, 1, 145);"
                                title="Processar Solicitação">
                               <i class="bi bi-gear"></i>
                             </a>

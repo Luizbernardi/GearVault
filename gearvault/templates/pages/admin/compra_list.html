@@ -71,6 +71,11 @@
                 <td class="py-2">R$ {{ compra.valor_total|floatformat:2 }}</td>
                 <td class="py-2">
                 <div class="d-flex gap-3 justify-content-center">
+                  <a href="{% url 'admin_compra_detalhes_pagina' compra.id %}" class="btn btn-sm d-inline-flex align-items-center justify-content-center text-white"
+                    style="width: 36px; height: 36px; background-color: #28a745;"
+                    title="Ver Detalhes">
+                    <i class="bi bi-eye"></i>
+                  </a>
                   <button class="btn btn-sm d-inline-flex align-items-center text-white justify-content-center"
                     style="width: 36px; height: 36px; background-color: #083D77;"
                     data-bs-toggle="modal"
@@ -91,11 +96,7 @@
                     title="Excluir">
                     <i class="bi bi-trash"></i>
                   </button>
-                  <a href="{% url 'admin_compra_detalhes_pagina' compra.id %}" class="btn btn-sm d-inline-flex align-items-center justify-content-center text-white"
-                    style="width: 36px; height: 36px; background-color: #28a745;"
-                    title="Ver Detalhes">
-                    <i class="bi bi-eye"></i>
-                  </a>
+                  
                 </div>
                </td>
               </tr>
