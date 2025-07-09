@@ -17,10 +17,10 @@
             <div class="d-flex gap-2">
               <form method="get" class="d-flex align-items-center">
                 <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+                  <option value="TODAS" {% if status_filter == 'TODAS' %}selected{% endif %}>Todas</option>
                   <option value="PENDENTE" {% if status_filter == 'PENDENTE' %}selected{% endif %}>Pendentes</option>
                   <option value="APROVADA" {% if status_filter == 'APROVADA' %}selected{% endif %}>Aprovadas</option>
                   <option value="REJEITADA" {% if status_filter == 'REJEITADA' %}selected{% endif %}>Rejeitadas</option>
-                  <option value="TODAS" {% if status_filter == 'TODAS' %}selected{% endif %}>Todas</option>
                 </select>
               </form>
             </div>
@@ -52,7 +52,7 @@
                 </thead>
                 <tbody>
                   {% for solicitacao in solicitacoes %}
-                    <tr {% if solicitacao.status == 'PENDENTE' %}class="table-warning"{% endif %}>
+                    <tr {% if solicitacao.status == 'PENDENTE' %}{% endif %}>
                       <td class="py-2">{{ solicitacao.data_solicitacao|date:"d/m/Y H:i" }}</td>
                       <td class="py-2">
                         <strong>{{ solicitacao.usuario.get_full_name|default:solicitacao.usuario.username }}</strong><br>
@@ -88,7 +88,7 @@
                         {% endif %}
                       </td>
                       <td class="py-2">
-                        <div class="d-flex gap-1">
+                        <div class="d-flex gap-3">
                           <button class="btn btn-sm btn-outline-info" 
                                   data-bs-toggle="modal" 
                                   data-bs-target="#detalhesSolicitacaoModal"
