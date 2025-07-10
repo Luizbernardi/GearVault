@@ -14,9 +14,9 @@ def main():
     dot = Digraph(comment='Diagrama de Models')
     dot.attr(rankdir='LR')
     for model in apps.get_models():
-        label = f"{model.__name__}\n"
+        label = f"{model.__name__}\\n"
         for field in model._meta.fields:
-            label += f"{field.name}: {field.get_internal_type()}\l"
+            label += f"{field.name}: {field.get_internal_type()}\\l"
         dot.node(model.__name__, label, shape='box', style='filled', fillcolor='lightyellow')
     for model in apps.get_models():
         for field in model._meta.fields:
