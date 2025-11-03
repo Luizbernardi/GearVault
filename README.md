@@ -256,6 +256,4 @@ GearVault/
   
 *GearVault - Gestão Inteligente de Componentes Eletrônicos* 
 
----
-
 **Desenvolvido por [Bruno Meredyk](https://github.com/Meredyk48) e [Luiz Bernardi](https://github.com/luizbernardi)** 
