@@ -4,4 +4,9 @@ graphviz==0.21
 pillow==11.2.1
 sqlparse==0.5.3
 tzdata==2025.2
+PyPDF2==3.0.1
+pdfplumber==0.11.0
+pytesseract==0.3.10
+opencv-python==4.10.0.84
+reportlab==4.4.4
 

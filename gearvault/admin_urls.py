@@ -12,6 +12,8 @@ urlpatterns = [
     path('compradores/', views.admin_comprador_list, name='admin_comprador_list'),
     path('compradores/<int:comprador_id>/compras/', views.admin_comprador_compras, name='admin_comprador_compras'),
     path('compras/', views.admin_compra_list, name='admin_compra_list'),
+    path('compras/process-invoice/', views.admin_process_invoice, name='admin_process_invoice'),
+    path('compras/<int:compra_id>/detalhes-ajax/', views.admin_compra_detalhes_ajax, name='admin_compra_detalhes_ajax'),
     path('compras/<int:compra_id>/detalhes/', views.admin_compra_detalhes, name='admin_compra_detalhes'),
     path('compras/<int:compra_id>/', views.admin_compra_detalhes_pagina, name='admin_compra_detalhes_pagina'),
     # Solicitações de produtos

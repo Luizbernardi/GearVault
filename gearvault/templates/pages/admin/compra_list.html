@@ -179,7 +179,7 @@
               <select class="form-select" name="add-fornecedor" id="add-fornecedor" required>
                 <option value="">Selecione um fornecedor</option>
                 {% for fornecedor in fornecedores %}
-                  <option value="{{ fornecedor.id }}">{{ fornecedor.nome }}</option>
+                  <option value="{{ fornecedor.id }}" data-cnpj="{{ fornecedor.cnpj }}">{{ fornecedor.nome }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -195,8 +195,17 @@
             <div class="col-12 mb-3">
               <label for="add-invoice" class="form-label">Invoice (PDF)</label>
               <input type="file" class="form-control" name="add-invoice" id="add-invoice" accept=".pdf">
+              <small class="text-muted">Selecione um PDF e os itens serão extraídos automaticamente</small>
             </div>
           </div>
+
+          <!-- Template escondido para produtos -->
+          <select id="add-produto-template" style="display: none;">
+            <option value="">Selecione um produto</option>
+            {% for produto in produtos %}
+              <option value="{{ produto.id }}">{{ produto.nome }} ({{ produto.codigo }})</option>
+            {% endfor %}
+          </select>
 
           <h6 class="mt-4 mb-3">Itens da Compra</h6>
           <div id="itens-compra">
@@ -288,9 +297,26 @@
             <div class="col-12 mb-3">
               <label for="edit-invoice" class="form-label">Invoice (PDF)</label>
               <input type="file" class="form-control" name="edit-invoice" id="edit-invoice" accept=".pdf">
-              <small class="text-muted">Deixe em branco para manter o arquivo atual</small>
+              <small class="text-muted">Deixe em branco para manter o arquivo atual. Ao selecionar um novo PDF, os itens serão extraídos automaticamente</small>
             </div>
           </div>
+
+          <!-- Template escondido para produtos no modal de edição -->
+          <select id="edit-produto-template" style="display: none;">
+            <option value="">Selecione um produto</option>
+            {% for produto in produtos %}
+              <option value="{{ produto.id }}">{{ produto.nome }} ({{ produto.codigo }})</option>
+            {% endfor %}
+          </select>
+
+          <h6 class="mt-4 mb-3">Itens da Compra</h6>
+          <div id="edit-itens-compra">
+            <!-- Itens serão preenchidos aqui quando invoice for processada -->
+          </div>
+          
+          <button type="button" class="btn btn-secondary" id="edit-add-item">
+            <i class="bi bi-plus"></i> Adicionar Item
+          </button>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>

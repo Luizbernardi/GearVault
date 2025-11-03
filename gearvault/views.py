@@ -9,6 +9,9 @@ from django.contrib import messages
 from django.db import transaction
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -997,6 +1000,128 @@ def admin_compra_list(request):
     }
     
     return render(request, 'pages/admin/compra_list.html', context)
+
+
+@login_required
+def admin_compra_detalhes_ajax(request, compra_id):
+    """
+    View AJAX para buscar detalhes de uma compra (itens)
+    """
+    if not request.user.is_authenticated or getattr(request.user.profile, 'role', None) != 'ADMIN':
+        return JsonResponse({'error': 'Não autorizado'}, status=403)
+    
+    try:
+        compra = Compra.objects.prefetch_related('itens__produto', 'itens__local').get(id=compra_id)
+        
+        itens = []
+        for item in compra.itens.all():
+            itens.append({
+                'produto_id': item.produto.id,
+                'produto_nome': item.produto.nome,
+                'produto_codigo': item.produto.codigo,
+                'local_id': item.local.id,
+                'local_nome': item.local.nome,
+                'quantidade': item.quantidade,
+                'valor_unitario': float(item.valor_unitario),
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'itens': itens
+        })
+    
+    except Compra.DoesNotExist:
+        return JsonResponse({'error': 'Compra não encontrada'}, status=404)
+    except Exception as e:
+        logger.error(f"Erro ao buscar detalhes da compra: {e}")
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@login_required
+def admin_process_invoice(request):
+    """
+    View AJAX para processar invoice e extrair itens automaticamente
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método não permitido'}, status=405)
+    
+    if not request.user.is_authenticated or getattr(request.user.profile, 'role', None) != 'ADMIN':
+        return JsonResponse({'error': 'Não autorizado'}, status=403)
+    
+    invoice_file = request.FILES.get('invoice')
+    if not invoice_file:
+        return JsonResponse({'error': 'Nenhum arquivo enviado'}, status=400)
+    
+    # Verifica se é PDF
+    if not invoice_file.name.lower().endswith('.pdf'):
+        return JsonResponse({'error': 'Apenas arquivos PDF são suportados'}, status=400)
+    
+    try:
+        # Salva temporariamente o arquivo
+        import tempfile
+        import os
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
+            for chunk in invoice_file.chunks():
+                temp_file.write(chunk)
+            temp_file_path = temp_file.name
+        
+        # Processa a invoice
+        from .invoice_processor import process_invoice_file, match_products_with_database
+        
+        invoice_data = process_invoice_file(temp_file_path)
+        
+        # Remove arquivo temporário
+        os.unlink(temp_file_path)
+        
+        if not invoice_data or not invoice_data.get('itens'):
+            return JsonResponse({
+                'warning': 'Nenhum item foi identificado na invoice',
+                'items': [],
+                'invoice_info': {
+                    'fornecedor_nome': invoice_data.get('fornecedor_nome'),
+                    'fornecedor_cnpj': invoice_data.get('fornecedor_cnpj'),
+                    'data_emissao': invoice_data.get('data_emissao'),
+                    'numero_nf': invoice_data.get('numero_nf'),
+                }
+            })
+        
+        # Tenta fazer match com produtos no banco
+        produtos_db = Produto.objects.all()
+        matched_items = match_products_with_database(invoice_data['itens'], produtos_db)
+        
+        # Prepara resposta
+        items_response = []
+        for item in matched_items:
+            items_response.append({
+                'codigo': item['codigo'],
+                'descricao': item['descricao'],
+                'quantidade': item['quantidade'],
+                'valor_unitario': float(item['valor_unitario']),
+                'produto_id': item.get('produto_id'),
+                'produto_nome': item.get('produto_nome'),
+                'match_score': item.get('match_score', 0),
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'items': items_response,
+            'invoice_info': {
+                'fornecedor_nome': invoice_data.get('fornecedor_nome'),
+                'fornecedor_cnpj': invoice_data.get('fornecedor_cnpj'),
+                'data_emissao': invoice_data.get('data_emissao'),
+                'numero_nf': invoice_data.get('numero_nf'),
+            },
+            'message': f'{len(items_response)} itens identificados na invoice'
+        })
+    
+    except Exception as e:
+        logger.error(f"Erro ao processar invoice: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'error': f'Erro ao processar invoice: {str(e)}'
+        }, status=500)
 
 
 @login_required
