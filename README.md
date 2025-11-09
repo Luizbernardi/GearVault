@@ -253,6 +253,12 @@ GearVault/
 4. **ORM/Banco**: Django ORM executa queries no banco SQLite (`db.sqlite3`)
 5. **Template**: View renderiza template HTML com dados do contexto
 6. **Resposta**: HTML renderizado é retornado ao usuário
+
+
+## Testes unitários
+- **Comando para rodar os testes unitários
+- **py manage.py test gearvault 
+
   
 *GearVault - Gestão Inteligente de Componentes Eletrônicos* 
 
