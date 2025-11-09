@@ -68,7 +68,7 @@
       <div class="card-body">
         {% if produtos %}
           {% for produto in produtos|slice:':5' %}
-            {% include 'components/list_item_avatar.html' with icon='bi-gear' title=produto.nome|truncatechars:30 subtitle=produto.codigo extra_info=produto.fornecedores.first.nome|default:"Sem fornecedor" badge_text=produto.preco|floatformat:2|default:"0.00" is_currency=True is_last=forloop.last %}
+            {% include 'components/list_item_avatar.html' with icon='bi-gear' title=produto.nome|truncatechars:30 subtitle=produto.codigo extra_info=produto.fornecedores.first.nome|default:"Sem fornecedor"  is_currency=True is_last=forloop.last %}
           {% endfor %}
         {% else %}
           {% include 'components/empty_state.html' with icon='bi-gear' message='Nenhum produto cadastrado.' %}
